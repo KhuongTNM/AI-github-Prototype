@@ -45,6 +45,7 @@ export interface Document {
   tags: string[]
   downloadCount: number
   isPublic: boolean
+  syncedToCloud?: boolean
 }
 
 export interface ChatMessage {
@@ -165,6 +166,7 @@ const MOCK_DOCUMENTS: Document[] = [
     downloadCount: 15,
     isPublic: true,
     description: "Tài liệu chương 1 môn Giải Tích 1 - Giới hạn và đạo hàm",
+    syncedToCloud: true,
   },
   {
     id: "doc-2",
@@ -180,6 +182,7 @@ const MOCK_DOCUMENTS: Document[] = [
     downloadCount: 32,
     isPublic: true,
     description: "Slides bài giảng OOP với Java - Kế thừa và Đa hình",
+    syncedToCloud: true,
   },
   {
     id: "doc-3",
@@ -194,6 +197,7 @@ const MOCK_DOCUMENTS: Document[] = [
     tags: ["cơ học", "vật lý", "động lực học"],
     downloadCount: 8,
     isPublic: true,
+    syncedToCloud: false,
   },
   {
     id: "doc-4",
@@ -208,6 +212,7 @@ const MOCK_DOCUMENTS: Document[] = [
     tags: ["grammar", "english", "advanced"],
     downloadCount: 24,
     isPublic: true,
+    syncedToCloud: false,
   },
   {
     id: "doc-5",
@@ -222,6 +227,7 @@ const MOCK_DOCUMENTS: Document[] = [
     tags: ["kinh tế", "cung cầu", "thị trường"],
     downloadCount: 11,
     isPublic: true,
+    syncedToCloud: true,
   },
 ]
 
@@ -261,6 +267,8 @@ interface AppState {
   updateDocument: (id: string, updates: Partial<Document>) => void
   deleteDocument: (id: string) => void
   restoreDocument: (id: string) => void
+  permanentlyDeleteDocument: (id: string) => void
+  syncDocumentToCloud: (id: string, synced: boolean) => void
   addChatSession: (session: ChatSession) => void
   updateChatSession: (id: string, updates: Partial<ChatSession>) => void
   setActiveChatId: (id: string | null) => void
@@ -354,6 +362,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addDocument = useCallback((doc: Document) => {
     setDocuments(prev => [doc, ...prev])
+    setCurrentUser(user => {
+      if (!user) return null
+      return { ...user, storageUsed: user.storageUsed + doc.sizeBytes }
+    })
   }, [])
 
   const updateDocument = useCallback((id: string, updates: Partial<Document>) => {
@@ -387,6 +399,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }, ...prev])
     }
   }, [currentUser, documents])
+
+  const permanentlyDeleteDocument = useCallback((id: string) => {
+    setDocuments(prev => {
+      const doc = prev.find(d => d.id === id)
+      if (doc && currentUser && doc.uploadedBy === currentUser.id) {
+        setCurrentUser(user => user ? { ...user, storageUsed: Math.max(0, user.storageUsed - doc.sizeBytes) } : null)
+      }
+      return prev.filter(d => d.id !== id)
+    })
+  }, [currentUser])
+
+  const syncDocumentToCloud = useCallback((id: string, synced: boolean) => {
+    setDocuments(prev => prev.map(d => d.id === id ? { ...d, syncedToCloud: synced } : d))
+  }, [])
 
   const addChatSession = useCallback((session: ChatSession) => {
     setChatSessions(prev => [session, ...prev])
@@ -495,7 +521,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       currentUser, users, documents, categories, chatSessions, activeChatId,
       searchHistory, activityLogs, isDarkMode, language, showAuthModal, authModalTab, currentPage,
       login, register, logout, openAuthModal, closeAuthModal, setCurrentPage,
-      addDocument, updateDocument, deleteDocument, restoreDocument,
+      addDocument, updateDocument, deleteDocument, restoreDocument, permanentlyDeleteDocument, syncDocumentToCloud,
       addChatSession, updateChatSession, setActiveChatId, addSearchHistory,
       updateUser, toggleUserLock, createAdminAccount, addCategory, deleteCategory, toggleDarkMode,
       setLanguage,

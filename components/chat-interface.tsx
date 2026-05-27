@@ -102,7 +102,7 @@ export function EnhancedChatInterface() {
 
   const suggestedQuestions = [
     "Tóm tắt nội dung chính của tài liệu này",
-    "Tạo flashcard từ tài liệu để ôn tập",
+    "Tóm tắt định nghĩa & ví dụ",
     "Các khái niệm quan trọng nhất là gì?",
     "Giải thích chi tiết phần khó nhất",
   ]

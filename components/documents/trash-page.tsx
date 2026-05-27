@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { useApp } from "@/lib/store"
 
 export function TrashPage() {
-  const { documents, restoreDocument, updateDocument, currentUser, openAuthModal } = useApp()
+  const { documents, restoreDocument, permanentlyDeleteDocument, currentUser, openAuthModal } = useApp()
 
   const trashedDocs = documents.filter(d => d.status === "deleted")
 
@@ -21,8 +21,7 @@ export function TrashPage() {
   }
 
   const handlePermanentDelete = (id: string) => {
-    // In real system this would permanently remove; in prototype just filter out
-    updateDocument(id, { status: "failed" as any })
+    permanentlyDeleteDocument(id)
   }
 
   return (
