@@ -10,6 +10,7 @@ export interface User {
   id: string
   email: string
   displayName: string
+  password: string
   avatar?: string
   role: UserRole
   isLocked: boolean
@@ -75,6 +76,8 @@ export interface SearchHistoryItem {
   timestamp: Date
 }
 
+export type Language = "vi" | "en"
+
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
 const MOCK_CATEGORIES: Category[] = [
@@ -88,8 +91,9 @@ const MOCK_CATEGORIES: Category[] = [
 
 const MOCK_ADMIN: User = {
   id: "user-admin",
-  email: "admin@aistudyhub.edu.vn",
+  email: "admin@aistudyhub.com",
   displayName: "Admin System",
+  password: "Admin123",
   role: "admin",
   isLocked: false,
   emailVerified: true,
@@ -104,8 +108,9 @@ const MOCK_USERS: User[] = [
   MOCK_ADMIN,
   {
     id: "user-1",
-    email: "minhtth5@fpt.edu.vn",
-    displayName: "MinhTTH5",
+    email: "student@aistudyhub.com",
+    displayName: "Demo Student",
+    password: "Student123",
     role: "user",
     isLocked: false,
     emailVerified: true,
@@ -119,6 +124,7 @@ const MOCK_USERS: User[] = [
     id: "user-2",
     email: "anhnv@fpt.edu.vn",
     displayName: "AnhNV",
+    password: "User12345",
     role: "user",
     isLocked: false,
     emailVerified: true,
@@ -132,6 +138,7 @@ const MOCK_USERS: User[] = [
     id: "user-3",
     email: "locpd@fpt.edu.vn",
     displayName: "LocPD",
+    password: "User12345",
     role: "user",
     isLocked: true,
     emailVerified: true,
@@ -237,6 +244,7 @@ interface AppState {
   searchHistory: SearchHistoryItem[]
   activityLogs: ActivityLog[]
   isDarkMode: boolean
+  language: Language
   // Auth modal
   showAuthModal: boolean
   authModalTab: "login" | "register" | "forgot"
@@ -259,9 +267,11 @@ interface AppState {
   addSearchHistory: (query: string) => void
   updateUser: (id: string, updates: Partial<User>) => void
   toggleUserLock: (id: string) => void
+  createAdminAccount: (email: string, password: string, displayName: string) => { success: boolean; error?: string }
   addCategory: (name: string, color: string) => void
   deleteCategory: (id: string) => void
   toggleDarkMode: () => void
+  setLanguage: (language: Language) => void
 }
 
 const AppContext = createContext<AppState | null>(null)
@@ -276,6 +286,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([])
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(MOCK_ACTIVITY)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [language, setLanguage] = useState<Language>("vi")
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authModalTab, setAuthModalTab] = useState<"login" | "register" | "forgot">("login")
   const [currentPage, setCurrentPage] = useState<AppState["currentPage"]>("home")
@@ -284,8 +295,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase())
     if (!user) return { success: false, error: "Email không tồn tại trong hệ thống." }
     if (user.isLocked) return { success: false, error: "Tài khoản đã bị khóa. Liên hệ Admin." }
-    // Mock: any password works for prototype except "wrongpass"
-    if (password === "wrongpass") {
+    if (password !== user.password) {
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, loginAttempts: u.loginAttempts + 1 } : u))
       const attempts = user.loginAttempts + 1
       if (attempts >= 5) {
@@ -313,6 +323,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       id: `user-${Date.now()}`,
       email,
       displayName,
+      password,
       role: "user",
       isLocked: false,
       emailVerified: false,
@@ -351,11 +362,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteDocument = useCallback((id: string) => {
     setDocuments(prev => prev.map(d => d.id === id ? { ...d, status: "deleted" } : d))
-  }, [])
+    const doc = documents.find(d => d.id === id)
+    if (currentUser?.role === "admin" && doc) {
+      setActivityLogs(prev => [{
+        id: `log-${Date.now()}`,
+        userId: currentUser.id,
+        action: "Admin deleted document",
+        target: doc.name,
+        timestamp: new Date(),
+      }, ...prev])
+    }
+  }, [currentUser, documents])
 
   const restoreDocument = useCallback((id: string) => {
     setDocuments(prev => prev.map(d => d.id === id ? { ...d, status: "ready" } : d))
-  }, [])
+    const doc = documents.find(d => d.id === id)
+    if (currentUser?.role === "admin" && doc) {
+      setActivityLogs(prev => [{
+        id: `log-${Date.now()}`,
+        userId: currentUser.id,
+        action: "Admin restored document",
+        target: doc.name,
+        timestamp: new Date(),
+      }, ...prev])
+    }
+  }, [currentUser, documents])
 
   const addChatSession = useCallback((session: ChatSession) => {
     setChatSessions(prev => [session, ...prev])
@@ -376,17 +407,80 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const toggleUserLock = useCallback((id: string) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, isLocked: !u.isLocked } : u))
-  }, [])
+    const target = users.find(u => u.id === id)
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, isLocked: !u.isLocked, loginAttempts: !u.isLocked ? 5 : 0 } : u))
+    if (currentUser?.role === "admin" && target) {
+      setActivityLogs(prev => [{
+        id: `log-${Date.now()}`,
+        userId: currentUser.id,
+        action: target.isLocked ? "Admin unlocked account" : "Admin locked account",
+        target: target.email,
+        timestamp: new Date(),
+      }, ...prev])
+    }
+  }, [currentUser, users])
+
+  const createAdminAccount = useCallback((email: string, password: string, displayName: string) => {
+    if (currentUser?.role !== "admin") return { success: false, error: "Only Admin can create another Admin account." }
+    if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+      return { success: false, error: "This email is already registered." }
+    }
+    if (password.length < 8) return { success: false, error: "Password must be at least 8 characters." }
+    if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      return { success: false, error: "Password must include at least one letter and one number." }
+    }
+    const admin: User = {
+      id: `admin-${Date.now()}`,
+      email,
+      displayName,
+      password,
+      role: "admin",
+      isLocked: false,
+      emailVerified: true,
+      createdAt: new Date(),
+      loginAttempts: 0,
+      lastActive: new Date(),
+      storageUsed: 0,
+      storageLimit: 1024 * 1024 * 1024 * 5,
+    }
+    setUsers(prev => [...prev, admin])
+    setActivityLogs(prev => [{
+      id: `log-${Date.now()}`,
+      userId: currentUser.id,
+      action: "Admin created Admin account",
+      target: email,
+      timestamp: new Date(),
+    }, ...prev])
+    return { success: true }
+  }, [currentUser, users])
 
   const addCategory = useCallback((name: string, color: string) => {
     const cat: Category = { id: `cat-${Date.now()}`, name, color }
     setCategories(prev => [...prev, cat])
-  }, [])
+    if (currentUser?.role === "admin") {
+      setActivityLogs(prev => [{
+        id: `log-${Date.now()}`,
+        userId: currentUser.id,
+        action: "Admin added category",
+        target: name,
+        timestamp: new Date(),
+      }, ...prev])
+    }
+  }, [currentUser])
 
   const deleteCategory = useCallback((id: string) => {
+    const cat = categories.find(c => c.id === id)
     setCategories(prev => prev.filter(c => c.id !== id))
-  }, [])
+    if (currentUser?.role === "admin" && cat) {
+      setActivityLogs(prev => [{
+        id: `log-${Date.now()}`,
+        userId: currentUser.id,
+        action: "Admin deleted category",
+        target: cat.name,
+        timestamp: new Date(),
+      }, ...prev])
+    }
+  }, [categories, currentUser])
 
   const toggleDarkMode = useCallback(() => {
     setIsDarkMode(prev => {
@@ -399,11 +493,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider value={{
       currentUser, users, documents, categories, chatSessions, activeChatId,
-      searchHistory, activityLogs, isDarkMode, showAuthModal, authModalTab, currentPage,
+      searchHistory, activityLogs, isDarkMode, language, showAuthModal, authModalTab, currentPage,
       login, register, logout, openAuthModal, closeAuthModal, setCurrentPage,
       addDocument, updateDocument, deleteDocument, restoreDocument,
       addChatSession, updateChatSession, setActiveChatId, addSearchHistory,
-      updateUser, toggleUserLock, addCategory, deleteCategory, toggleDarkMode,
+      updateUser, toggleUserLock, createAdminAccount, addCategory, deleteCategory, toggleDarkMode,
+      setLanguage,
     }}>
       {children}
     </AppContext.Provider>
