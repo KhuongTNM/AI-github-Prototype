@@ -22,44 +22,88 @@ import {
 
 // ─── Home Page ────────────────────────────────────────────────────────────────
 function HomePage() {
-  const { openAuthModal, currentUser, setCurrentPage } = useApp()
+  const { openAuthModal, currentUser, setCurrentPage, language } = useApp()
+
+  const text = language === "vi" ? {
+    chat: "Chat với AI",
+    chatDesc: "Hỏi đáp thông minh về tài liệu",
+    docs: "Quản lý tài liệu",
+    docsDesc: "Upload, tìm kiếm, phân loại",
+    search: "Tìm kiếm",
+    searchDesc: "Tìm nhanh tài liệu theo tag",
+    cloudDesc: "Lưu trữ an toàn, mã hóa",
+    hero: "Trợ lý AI cho",
+    student: "sinh viên",
+    intro: "Quản lý tài liệu học tập tập trung, lưu trữ trên cloud và hỏi đáp AI thông minh — tất cả trong một nền tảng.",
+    startFree: "Bắt đầu miễn phí",
+    login: "Đăng nhập",
+    startChat: "Bắt đầu chat AI",
+    why: "Tại sao chọn AI Study Hub?",
+    highlights: [
+      "AI phân tích tài liệu theo thời gian thực",
+      "Chia sẻ tài liệu với bạn học dễ dàng",
+      "Bảo mật dữ liệu với mã hóa AES-256",
+      "Tìm kiếm tức thì với full-text search",
+    ],
+  } : {
+    chat: "Chat with AI",
+    chatDesc: "Ask smart questions about your documents",
+    docs: "Document manager",
+    docsDesc: "Upload, search, and classify files",
+    search: "Search",
+    searchDesc: "Find documents quickly by tag",
+    cloudDesc: "Secure encrypted storage",
+    hero: "AI assistant for",
+    student: "students",
+    intro: "Manage study documents in one place, store them in the cloud, and ask an AI assistant questions about the content.",
+    startFree: "Start for free",
+    login: "Log in",
+    startChat: "Start AI chat",
+    why: "Why choose AI Study Hub?",
+    highlights: [
+      "AI analyzes documents in real time",
+      "Share study material with classmates",
+      "Protect data with AES-256 encryption",
+      "Search instantly with full-text matching",
+    ],
+  }
 
   const quickActions = [
     {
       icon: Bot,
-      label: "Chat với AI",
-      desc: "Hỏi đáp thông minh về tài liệu",
+      label: text.chat,
+      desc: text.chatDesc,
       color: "from-violet-500 to-purple-600",
       page: "chat" as const,
     },
     {
       icon: FileText,
-      label: "Quản lý tài liệu",
-      desc: "Upload, tìm kiếm, phân loại",
+      label: text.docs,
+      desc: text.docsDesc,
       color: "from-blue-500 to-cyan-600",
       page: "documents" as const,
     },
     {
       icon: Search,
-      label: "Tìm kiếm",
-      desc: "Tìm nhanh tài liệu theo tag",
+      label: text.search,
+      desc: text.searchDesc,
       color: "from-emerald-500 to-green-600",
       page: "search" as const,
     },
     {
       icon: Cloud,
       label: "Cloud Storage",
-      desc: "Lưu trữ an toàn, mã hóa",
+      desc: text.cloudDesc,
       color: "from-orange-500 to-red-500",
       page: "cloud" as const,
     },
   ]
 
   const highlights = [
-    { icon: Star, text: "AI phân tích tài liệu theo thời gian thực" },
-    { icon: Users, text: "Chia sẻ tài liệu với bạn học dễ dàng" },
-    { icon: Shield, text: "Bảo mật dữ liệu với mã hóa AES-256" },
-    { icon: Zap, text: "Tìm kiếm tức thì với full-text search" },
+    { icon: Star, text: text.highlights[0] },
+    { icon: Users, text: text.highlights[1] },
+    { icon: Shield, text: text.highlights[2] },
+    { icon: Zap, text: text.highlights[3] },
   ]
 
   return (
@@ -71,13 +115,13 @@ function HomePage() {
           AI Study Hub — SU26SWP10
         </div>
         <h1 className="mb-4 text-balance text-4xl font-bold text-foreground md:text-6xl">
-          Trợ lý AI cho{" "}
+          {text.hero}{" "}
           <span className="bg-gradient-to-r from-primary to-violet-500 bg-clip-text text-transparent">
-            sinh viên
+            {text.student}
           </span>
         </h1>
         <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
-          Quản lý tài liệu học tập tập trung, lưu trữ trên cloud và hỏi đáp AI thông minh — tất cả trong một nền tảng.
+          {text.intro}
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           {!currentUser ? (
@@ -89,7 +133,7 @@ function HomePage() {
                 onClick={() => openAuthModal("register")}
               >
                 <GraduationCap className="h-5 w-5" />
-                Bắt đầu miễn phí
+                {text.startFree}
               </Button>
               <Button
                 id="hero-login-btn"
@@ -97,7 +141,7 @@ function HomePage() {
                 variant="outline"
                 onClick={() => openAuthModal("login")}
               >
-                Đăng nhập
+                {text.login}
               </Button>
             </>
           ) : (
@@ -107,7 +151,7 @@ function HomePage() {
               onClick={() => setCurrentPage("chat")}
             >
               <Bot className="h-5 w-5" />
-              Bắt đầu chat AI
+              {text.startChat}
             </Button>
           )}
         </div>
@@ -136,7 +180,7 @@ function HomePage() {
 
       {/* Highlights */}
       <div className="mb-12 rounded-2xl border border-border bg-gradient-to-br from-primary/5 to-violet-500/5 p-6">
-        <h2 className="mb-4 text-center text-lg font-semibold text-foreground">Tại sao chọn AI Study Hub?</h2>
+        <h2 className="mb-4 text-center text-lg font-semibold text-foreground">{text.why}</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {highlights.map(h => (
             <div key={h.text} className="flex items-center gap-3">

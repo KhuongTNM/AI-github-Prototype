@@ -16,19 +16,49 @@ interface SidebarProps {
 
 type NavPage = "home" | "documents" | "chat" | "cloud" | "search" | "profile" | "admin" | "trash"
 
-const navItems: { page: NavPage; icon: React.ElementType; label: string; adminOnly?: boolean }[] = [
-  { page: "home", icon: Home, label: "Trang chủ" },
-  { page: "chat", icon: MessageCircle, label: "AI Chatbot" },
-  { page: "documents", icon: FolderOpen, label: "Tài liệu của tôi" },
-  { page: "cloud", icon: Cloud, label: "Cloud Storage" },
-  { page: "search", icon: Search, label: "Tìm kiếm" },
-  { page: "trash", icon: Trash2, label: "Thùng rác" },
-  { page: "admin", icon: LayoutDashboard, label: "Admin Panel", adminOnly: true },
+const navItems: { page: NavPage; icon: React.ElementType; label: { vi: string; en: string }; adminOnly?: boolean }[] = [
+  { page: "home", icon: Home, label: { vi: "Trang chủ", en: "Home" } },
+  { page: "chat", icon: MessageCircle, label: { vi: "AI Chatbot", en: "AI Chatbot" } },
+  { page: "documents", icon: FolderOpen, label: { vi: "Tài liệu của tôi", en: "My Documents" } },
+  { page: "cloud", icon: Cloud, label: { vi: "Cloud Storage", en: "Cloud Storage" } },
+  { page: "search", icon: Search, label: { vi: "Tìm kiếm", en: "Search" } },
+  { page: "trash", icon: Trash2, label: { vi: "Thùng rác", en: "Trash" } },
+  { page: "admin", icon: LayoutDashboard, label: { vi: "Admin Panel", en: "Admin Panel" }, adminOnly: true },
 ]
 
 export function Sidebar({ onNewChat }: SidebarProps) {
   const { currentUser, currentPage, setCurrentPage, chatSessions, activeChatId,
-    setActiveChatId, openAuthModal, logout, documents } = useApp()
+    setActiveChatId, openAuthModal, logout, documents, language } = useApp()
+
+  const text = language === "vi" ? {
+    newChat: "Cuộc hội thoại mới",
+    menu: "Menu",
+    chatHistory: "Lịch sử chat",
+    startChat: "Bắt đầu cuộc trò chuyện",
+    tools: "Công cụ AI",
+    summarize: "Tóm tắt tài liệu",
+    flashcards: "Tạo Flashcard",
+    storage: "Dung lượng",
+    logout: "Đăng xuất",
+    loginFree: "Đăng nhập miễn phí",
+    loginHint: "Lưu lịch sử chat và tài liệu trên cloud.",
+    login: "Đăng nhập",
+    register: "Đăng ký",
+  } : {
+    newChat: "New conversation",
+    menu: "Menu",
+    chatHistory: "Chat history",
+    startChat: "Start a conversation",
+    tools: "AI tools",
+    summarize: "Summarize document",
+    flashcards: "Create flashcards",
+    storage: "Storage",
+    logout: "Log out",
+    loginFree: "Log in for free",
+    loginHint: "Save chat history and documents in cloud storage.",
+    login: "Log in",
+    register: "Sign up",
+  }
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     history: true,
@@ -72,7 +102,7 @@ export function Sidebar({ onNewChat }: SidebarProps) {
           className="w-full justify-start gap-2 border-border bg-background text-foreground hover:bg-muted"
         >
           <Plus className="h-4 w-4 rounded-full bg-primary/10 p-0.5 text-primary" />
-          Cuộc hội thoại mới
+          {text.newChat}
         </Button>
       </div>
 
@@ -81,7 +111,7 @@ export function Sidebar({ onNewChat }: SidebarProps) {
         {/* Main Nav Items */}
         <div className="mb-3">
           <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-            Menu
+            {text.menu}
           </p>
           {navItems
             .filter(item => !item.adminOnly || currentUser?.role === "admin")
@@ -98,7 +128,7 @@ export function Sidebar({ onNewChat }: SidebarProps) {
                 )}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
-                <span>{item.label}</span>
+                <span>{item.label[language]}</span>
                 {item.page === "trash" && trashedCount > 0 && (
                   <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-destructive/20 text-xs text-destructive font-medium">
                     {trashedCount}
@@ -121,7 +151,7 @@ export function Sidebar({ onNewChat }: SidebarProps) {
               className="flex w-full items-center gap-2 py-2 text-sm text-muted-foreground px-2"
             >
               <Clock className="h-4 w-4" />
-              <span>Lịch sử chat</span>
+              <span>{text.chatHistory}</span>
               {expandedSections.history ? (
                 <ChevronDown className="ml-auto h-4 w-4" />
               ) : (
@@ -155,7 +185,7 @@ export function Sidebar({ onNewChat }: SidebarProps) {
                     className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   >
                     <Plus className="h-3 w-3" />
-                    Bắt đầu cuộc trò chuyện
+                    {text.startChat}
                   </button>
                 )}
               </div>
@@ -166,11 +196,11 @@ export function Sidebar({ onNewChat }: SidebarProps) {
         {/* Tools */}
         <div className="mb-3">
           <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-            Công cụ AI
+            {text.tools}
           </p>
           {[
-            { icon: FileText, label: "Tóm tắt tài liệu" },
-            { icon: LayoutGrid, label: "Tạo Flashcard" },
+            { icon: FileText, label: text.summarize },
+            { icon: LayoutGrid, label: text.flashcards },
             { icon: Sparkles, label: "AI Writer" },
           ].map(tool => (
             <button
@@ -206,7 +236,7 @@ export function Sidebar({ onNewChat }: SidebarProps) {
             {currentUser.role !== "admin" && (
               <div>
                 <div className="mb-1 flex justify-between text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><HardDrive className="h-3 w-3" /> Dung lượng</span>
+                  <span className="flex items-center gap-1"><HardDrive className="h-3 w-3" /> {text.storage}</span>
                   <span>{formatBytes(currentUser.storageUsed)} / {formatBytes(currentUser.storageLimit)}</span>
                 </div>
                 <div className="h-1.5 w-full rounded-full bg-muted">
@@ -225,14 +255,14 @@ export function Sidebar({ onNewChat }: SidebarProps) {
               className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
             >
               <X className="h-4 w-4" />
-              Đăng xuất
+              {text.logout}
             </Button>
           </div>
         ) : (
           <div className="rounded-lg bg-background p-4">
-            <p className="mb-1 text-sm font-medium text-foreground">Đăng nhập miễn phí</p>
+            <p className="mb-1 text-sm font-medium text-foreground">{text.loginFree}</p>
             <p className="mb-3 text-xs text-muted-foreground">
-              Lưu lịch sử chat và tài liệu trên cloud.
+              {text.loginHint}
             </p>
             <div className="flex gap-2">
               <Button
@@ -243,7 +273,7 @@ export function Sidebar({ onNewChat }: SidebarProps) {
                 onClick={() => openAuthModal("login")}
               >
                 <LogIn className="h-3 w-3" />
-                Đăng nhập
+                {text.login}
               </Button>
               <Button
                 id="sidebar-register"
@@ -251,7 +281,7 @@ export function Sidebar({ onNewChat }: SidebarProps) {
                 className="flex-1"
                 onClick={() => openAuthModal("register")}
               >
-                Đăng ký
+                {text.register}
               </Button>
             </div>
           </div>
