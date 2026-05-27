@@ -105,6 +105,7 @@ export function EnhancedChatInterface() {
     "Tóm tắt định nghĩa & ví dụ",
     "Các khái niệm quan trọng nhất là gì?",
     "Giải thích chi tiết phần khó nhất",
+    "Giúp tôi hiểu phần này rõ hơn",
   ]
 
   const formatTime = (date: Date) =>

@@ -1,6 +1,6 @@
-"use client"
+﻿"use client"
 
-import { Moon, Sun, Sparkles, ChevronDown, LogOut, User, Settings, LayoutDashboard, Bell } from "lucide-react"
+import { Moon, Sun, ChevronDown, LogOut, User, LayoutDashboard, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -91,14 +91,6 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
               <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
             </Button>
 
-            {/* Upgrade (for regular users) */}
-            {currentUser.role === "user" && (
-              <Button variant="outline" size="sm" className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5">
-                <Sparkles className="h-4 w-4" />
-                {text.upgrade}
-              </Button>
-            )}
-
             {/* User Avatar Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -139,15 +131,11 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
                   {text.profile}
                 </DropdownMenuItem>
                 {currentUser.role === "admin" && (
-                  <DropdownMenuItem id="go-admin" onClick={() => setCurrentPage("admin")}>
+                  <DropdownMenuItem id="go-admin" onClick={() => setCurrentPage("admin") }>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Admin Panel
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => setCurrentPage("home")}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  {text.settings}
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem id="logout-btn" onClick={logout} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
@@ -158,12 +146,6 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
           </>
         ) : (
           <>
-            {/* Upgrade Button */}
-            <Button variant="outline" size="sm" className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5">
-              <Sparkles className="h-4 w-4" />
-              {text.upgrade}
-            </Button>
-
             {/* Login Button */}
             <Button
               id="login-btn"
@@ -188,3 +170,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
     </header>
   )
 }
+
+
+
+

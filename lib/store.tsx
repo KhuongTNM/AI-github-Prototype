@@ -551,9 +551,6 @@ export function getAIMockResponse(question: string, docName?: string): string {
   if (q.includes("tóm tắt") || q.includes("summary")) {
     return `📝 **Tóm tắt ${docName ? `"${docName}"` : "tài liệu"}:**\n\nTài liệu này bao gồm các nội dung chính:\n\n1. **Phần mở đầu** — Giới thiệu tổng quan về chủ đề, định nghĩa các khái niệm cơ bản.\n2. **Nội dung chính** — Phân tích chi tiết với các ví dụ minh họa thực tế.\n3. **Ứng dụng** — Cách áp dụng kiến thức vào bài tập và thực tiễn.\n4. **Kết luận** — Tổng hợp điểm mấu chốt và gợi ý học tập tiếp theo.\n\nBạn muốn tôi giải thích sâu hơn phần nào?`
   }
-  if (q.includes("flashcard") || q.includes("thẻ học")) {
-    return `🃏 **Flashcard từ tài liệu:**\n\n**Thẻ 1:**\n- Câu hỏi: Định nghĩa khái niệm trung tâm là gì?\n- Đáp án: Là nền tảng lý thuyết cốt lõi của chủ đề.\n\n**Thẻ 2:**\n- Câu hỏi: Kể tên 3 ứng dụng thực tế.\n- Đáp án: (1) Bài tập tính toán, (2) Phân tích trường hợp, (3) Thiết kế mô hình.\n\n**Thẻ 3:**\n- Câu hỏi: Công thức/quy tắc quan trọng nhất?\n- Đáp án: Xem lại trang 15-20 của tài liệu.\n\nTôi có thể tạo thêm flashcard theo yêu cầu cụ thể!`
-  }
   if (q.includes("định nghĩa") || q.includes("là gì") || q.includes("what is")) {
     return `💡 **Giải thích khái niệm:**\n\nDựa trên ${docName ? `tài liệu "${docName}"` : "nội dung bạn cung cấp"}, đây là định nghĩa chi tiết:\n\nKhái niệm này được hiểu là **tập hợp các nguyên tắc và phương pháp** được áp dụng trong lĩnh vực này. Nó bao gồm:\n\n• **Khía cạnh lý thuyết**: Nền tảng học thuật và nghiên cứu khoa học\n• **Khía cạnh thực hành**: Ứng dụng trong các tình huống thực tế\n• **Mối liên hệ**: Kết nối với các chủ đề liên quan khác\n\nBạn cần ví dụ cụ thể hơn không?`
   }

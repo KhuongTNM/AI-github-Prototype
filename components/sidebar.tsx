@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import {
-  MessageCircle, FolderOpen, Plus, FileText, Sparkles, Search, Cloud,
+  MessageCircle, FolderOpen, Plus, FileText, Search, Cloud,
   ChevronDown, ChevronRight, GraduationCap, LayoutGrid, Home, Trash2,
   LayoutDashboard, User, LogIn, HardDrive, X, Clock,
 } from "lucide-react"
@@ -37,7 +37,6 @@ export function Sidebar({ onNewChat }: SidebarProps) {
     startChat: "Bắt đầu cuộc trò chuyện",
     tools: "Công cụ AI",
     summarize: "Tóm tắt tài liệu",
-    flashcards: "Tạo Flashcard",
     storage: "Dung lượng",
     logout: "Đăng xuất",
     loginFree: "Đăng nhập miễn phí",
@@ -51,7 +50,6 @@ export function Sidebar({ onNewChat }: SidebarProps) {
     startChat: "Start a conversation",
     tools: "AI tools",
     summarize: "Summarize document",
-    flashcards: "Create flashcards",
     storage: "Storage",
     logout: "Log out",
     loginFree: "Log in for free",
@@ -200,8 +198,6 @@ export function Sidebar({ onNewChat }: SidebarProps) {
           </p>
           {[
             { icon: FileText, label: text.summarize },
-            { icon: LayoutGrid, label: text.flashcards },
-            { icon: Sparkles, label: "AI Writer" },
           ].map(tool => (
             <button
               key={tool.label}
