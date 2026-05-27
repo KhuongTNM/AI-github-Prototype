@@ -10,7 +10,7 @@ import {
   Shield,
 } from "lucide-react"
 
-export type TabType = "chat" | "summary" | "detector" | "writer" | "flashcard" | "search"
+export type TabType = "chat" | "summary" | "detector" | "search"
 
 interface ToolTabsProps {
   activeTab: TabType
@@ -21,8 +21,6 @@ const tabs: { id: TabType; label: string; icon: React.ElementType }[] = [
   { id: "chat", label: "Chat", icon: MessageCircle },
   { id: "summary", label: "Tóm tắt", icon: FileText },
   { id: "detector", label: "AI Detector", icon: Shield },
-  { id: "writer", label: "AI Writer", icon: PenTool },
-  { id: "flashcard", label: "Flashcards", icon: LayoutGrid },
   { id: "search", label: "Tìm kiếm", icon: Search },
 ]
 

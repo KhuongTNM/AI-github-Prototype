@@ -170,8 +170,6 @@ export function Sidebar({ onNewChat }: SidebarProps) {
           </p>
           {[
             { icon: FileText, label: "Tóm tắt tài liệu" },
-            { icon: LayoutGrid, label: "Tạo Flashcard" },
-            { icon: Sparkles, label: "AI Writer" },
           ].map(tool => (
             <button
               key={tool.label}
