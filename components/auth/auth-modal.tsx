@@ -7,7 +7,7 @@ import { useApp } from "@/lib/store"
 import { cn } from "@/lib/utils"
 
 export function AuthModal() {
-  const { showAuthModal, authModalTab, closeAuthModal, openAuthModal, login, register } = useApp()
+  const { showAuthModal, authModalTab, closeAuthModal, login, register, language } = useApp()
   const [tab, setTab] = useState<"login" | "register" | "forgot">(authModalTab)
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -22,6 +22,62 @@ export function AuthModal() {
 
   if (!showAuthModal) return null
 
+  const text = language === "vi" ? {
+    login: "Đăng nhập",
+    register: "Đăng ký",
+    password: "Mật khẩu",
+    forgot: "Quên mật khẩu?",
+    submitLogin: "Đăng nhập",
+    submitRegister: "Tạo tài khoản",
+    demo: "Demo: admin@aistudyhub.com / Admin123 hoặc student@aistudyhub.com / Student123.",
+    name: "Tên hiển thị",
+    confirmPassword: "Xác nhận mật khẩu",
+    haveAccount: "Đã có tài khoản?",
+    forgotTitle: "Quên mật khẩu?",
+    forgotHelp: "Nhập email để nhận link đặt lại mật khẩu.",
+    sendReset: "Gửi link đặt lại",
+    backLogin: "← Quay lại đăng nhập",
+    required: "Vui lòng điền đầy đủ thông tin.",
+    mismatch: "Mật khẩu xác nhận không khớp.",
+    minPassword: "Mật khẩu phải có ít nhất 8 ký tự.",
+    letterNumber: "Mật khẩu phải chứa ít nhất 1 chữ cái và 1 số.",
+    failedLogin: "Đăng nhập thất bại.",
+    failedRegister: "Đăng ký thất bại.",
+    enterEmail: "Vui lòng nhập email.",
+    resetSent: "Link đặt lại mật khẩu đã được gửi đến email của bạn!",
+    strength: "Độ mạnh:",
+    strengthLabel: ["", "Yếu", "Trung bình", "Tốt", "Mạnh"],
+    namePlaceholder: "Nguyễn Văn A",
+    passwordPlaceholder: "Tối thiểu 8 ký tự, có chữ và số",
+  } : {
+    login: "Log in",
+    register: "Sign up",
+    password: "Password",
+    forgot: "Forgot password?",
+    submitLogin: "Log in",
+    submitRegister: "Create account",
+    demo: "Demo: admin@aistudyhub.com / Admin123 or student@aistudyhub.com / Student123.",
+    name: "Display name",
+    confirmPassword: "Confirm password",
+    haveAccount: "Already have an account?",
+    forgotTitle: "Forgot password?",
+    forgotHelp: "Enter your email to receive a reset link.",
+    sendReset: "Send reset link",
+    backLogin: "← Back to login",
+    required: "Please fill in all required fields.",
+    mismatch: "The confirmation password does not match.",
+    minPassword: "Password must be at least 8 characters.",
+    letterNumber: "Password must include at least one letter and one number.",
+    failedLogin: "Login failed.",
+    failedRegister: "Registration failed.",
+    enterEmail: "Please enter your email.",
+    resetSent: "A password reset link has been sent to your email.",
+    strength: "Strength:",
+    strengthLabel: ["", "Weak", "Medium", "Good", "Strong"],
+    namePlaceholder: "Alex Nguyen",
+    passwordPlaceholder: "At least 8 characters with letters and numbers",
+  }
+
   const switchTab = (t: typeof tab) => {
     setTab(t)
     setError("")
@@ -35,38 +91,38 @@ export function AuthModal() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    if (!email || !password) { setError("Vui lòng điền đầy đủ thông tin."); return }
+    if (!email || !password) { setError(text.required); return }
     setLoading(true)
     await new Promise(r => setTimeout(r, 800))
     const result = login(email, password)
     setLoading(false)
-    if (!result.success) setError(result.error || "Đăng nhập thất bại.")
+    if (!result.success) setError(result.error || text.failedLogin)
   }
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    if (!email || !password || !displayName) { setError("Vui lòng điền đầy đủ thông tin."); return }
-    if (password !== confirmPassword) { setError("Mật khẩu xác nhận không khớp."); return }
-    if (password.length < 8) { setError("Mật khẩu phải có ít nhất 8 ký tự."); return }
+    if (!email || !password || !displayName) { setError(text.required); return }
+    if (password !== confirmPassword) { setError(text.mismatch); return }
+    if (password.length < 8) { setError(text.minPassword); return }
     if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
-      setError("Mật khẩu phải chứa ít nhất 1 chữ cái và 1 số."); return
+      setError(text.letterNumber); return
     }
     setLoading(true)
     await new Promise(r => setTimeout(r, 1000))
     const result = register(email, password, displayName)
     setLoading(false)
-    if (!result.success) setError(result.error || "Đăng ký thất bại.")
+    if (!result.success) setError(result.error || text.failedRegister)
   }
 
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    if (!email) { setError("Vui lòng nhập email."); return }
+    if (!email) { setError(text.enterEmail); return }
     setLoading(true)
     await new Promise(r => setTimeout(r, 1000))
     setLoading(false)
-    setSuccess("Link đặt lại mật khẩu đã được gửi đến email của bạn!")
+    setSuccess(text.resetSent)
   }
 
   // Password strength
@@ -80,7 +136,7 @@ export function AuthModal() {
     return s
   })()
 
-  const strengthLabel = ["", "Yếu", "Trung bình", "Tốt", "Mạnh"][strength]
+  const strengthLabel = text.strengthLabel[strength]
   const strengthColor = ["", "bg-red-500", "bg-yellow-500", "bg-blue-500", "bg-green-500"][strength]
 
   return (
@@ -117,7 +173,7 @@ export function AuthModal() {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {t === "login" ? "Đăng nhập" : "Đăng ký"}
+                {t === "login" ? text.login : text.register}
               </button>
             ))}
           </div>
@@ -154,7 +210,7 @@ export function AuthModal() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Mật khẩu</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">{text.password}</label>
                 <div className="relative">
                   <input
                     id="login-password"
@@ -170,15 +226,15 @@ export function AuthModal() {
                   </button>
                 </div>
                 <button type="button" onClick={() => switchTab("forgot")} className="mt-1 text-xs text-primary hover:underline">
-                  Quên mật khẩu?
+                  {text.forgot}
                 </button>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Đăng nhập
+                {text.submitLogin}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                💡 <strong>Demo:</strong> Dùng email bất kỳ trong hệ thống với bất kỳ mật khẩu.
+                <strong>{text.demo}</strong>
               </p>
             </form>
           )}
@@ -187,13 +243,13 @@ export function AuthModal() {
           {tab === "register" && (
             <form onSubmit={handleRegister} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Tên hiển thị</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">{text.name}</label>
                 <input
                   id="reg-name"
                   type="text"
                   value={displayName}
                   onChange={e => setDisplayName(e.target.value)}
-                  placeholder="Nguyễn Văn A"
+                  placeholder={text.namePlaceholder}
                   maxLength={50}
                   className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   required
@@ -213,14 +269,14 @@ export function AuthModal() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Mật khẩu</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">{text.password}</label>
                 <div className="relative">
                   <input
                     id="reg-password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    placeholder="Tối thiểu 8 ký tự, có chữ và số"
+                    placeholder={text.passwordPlaceholder}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                     required
                   />
@@ -235,12 +291,12 @@ export function AuthModal() {
                         <div key={i} className={cn("h-1 flex-1 rounded-full", i <= strength ? strengthColor : "bg-muted")} />
                       ))}
                     </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">Độ mạnh: <span className="font-medium">{strengthLabel}</span></p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{text.strength} <span className="font-medium">{strengthLabel}</span></p>
                   </div>
                 )}
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Xác nhận mật khẩu</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">{text.confirmPassword}</label>
                 <input
                   id="reg-confirm"
                   type="password"
@@ -256,11 +312,11 @@ export function AuthModal() {
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Tạo tài khoản
+                {text.submitRegister}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                Đã có tài khoản?{" "}
-                <button type="button" onClick={() => switchTab("login")} className="text-primary hover:underline">Đăng nhập</button>
+                {text.haveAccount}{" "}
+                <button type="button" onClick={() => switchTab("login")} className="text-primary hover:underline">{text.login}</button>
               </p>
             </form>
           )}
@@ -269,8 +325,8 @@ export function AuthModal() {
           {tab === "forgot" && (
             <form onSubmit={handleForgot} className="space-y-4">
               <div className="mb-2 text-center">
-                <h3 className="text-lg font-semibold text-foreground">Quên mật khẩu?</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Nhập email để nhận link đặt lại mật khẩu.</p>
+                <h3 className="text-lg font-semibold text-foreground">{text.forgotTitle}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{text.forgotHelp}</p>
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
@@ -288,11 +344,11 @@ export function AuthModal() {
               {!success && (
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Gửi link đặt lại
+                  {text.sendReset}
                 </Button>
               )}
               <button type="button" onClick={() => switchTab("login")} className="w-full text-center text-sm text-primary hover:underline">
-                ← Quay lại đăng nhập
+                {text.backLogin}
               </button>
             </form>
           )}

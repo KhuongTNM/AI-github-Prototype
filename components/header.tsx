@@ -18,7 +18,29 @@ interface HeaderProps {
 }
 
 export function Header({ onLogin, onRegister }: HeaderProps) {
-  const { currentUser, logout, openAuthModal, setCurrentPage, toggleDarkMode, isDarkMode } = useApp()
+  const { currentUser, logout, openAuthModal, setCurrentPage, toggleDarkMode, isDarkMode, language, setLanguage } = useApp()
+
+  const text = language === "vi" ? {
+    description: "Hệ thống quản lý tài liệu học tập AI",
+    light: "Chế độ sáng",
+    dark: "Chế độ tối",
+    upgrade: "Nâng cấp",
+    profile: "Hồ sơ cá nhân",
+    settings: "Cài đặt",
+    logout: "Đăng xuất",
+    login: "Đăng nhập",
+    register: "Đăng ký",
+  } : {
+    description: "AI-powered study document management system",
+    light: "Light mode",
+    dark: "Dark mode",
+    upgrade: "Upgrade",
+    profile: "Profile",
+    settings: "Settings",
+    logout: "Log out",
+    login: "Log in",
+    register: "Sign up",
+  }
 
   const avatarInitials = currentUser?.displayName
     .split(" ")
@@ -31,7 +53,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
     <header className="flex h-14 items-center justify-between border-b border-border bg-background px-4 sticky top-0 z-20">
       {/* Description Text */}
       <div className="hidden text-sm text-muted-foreground md:block">
-        Hệ thống quản lý tài liệu học tập AI
+        {text.description}
       </div>
 
       <div className="flex items-center gap-2">
@@ -42,7 +64,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
           size="icon"
           onClick={toggleDarkMode}
           className="text-muted-foreground hover:text-foreground"
-          title={isDarkMode ? "Chế độ sáng" : "Chế độ tối"}
+          title={isDarkMode ? text.light : text.dark}
         >
           {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
@@ -51,13 +73,13 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
-              VI
+              {language.toUpperCase()}
               <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>Tiếng Việt</DropdownMenuItem>
-            <DropdownMenuItem>English</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLanguage("vi")}>Tiếng Việt</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLanguage("en")}>English</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -73,7 +95,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
             {currentUser.role === "user" && (
               <Button variant="outline" size="sm" className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5">
                 <Sparkles className="h-4 w-4" />
-                Nâng cấp
+                {text.upgrade}
               </Button>
             )}
 
@@ -114,7 +136,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem id="go-profile" onClick={() => setCurrentPage("profile")}>
                   <User className="mr-2 h-4 w-4" />
-                  Hồ sơ cá nhân
+                  {text.profile}
                 </DropdownMenuItem>
                 {currentUser.role === "admin" && (
                   <DropdownMenuItem id="go-admin" onClick={() => setCurrentPage("admin")}>
@@ -124,12 +146,12 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
                 )}
                 <DropdownMenuItem onClick={() => setCurrentPage("home")}>
                   <Settings className="mr-2 h-4 w-4" />
-                  Cài đặt
+                  {text.settings}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem id="logout-btn" onClick={logout} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
-                  Đăng xuất
+                  {text.logout}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -139,7 +161,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
             {/* Upgrade Button */}
             <Button variant="outline" size="sm" className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5">
               <Sparkles className="h-4 w-4" />
-              Nâng cấp
+              {text.upgrade}
             </Button>
 
             {/* Login Button */}
@@ -149,7 +171,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
               size="sm"
               onClick={() => openAuthModal("login")}
             >
-              Đăng nhập
+              {text.login}
             </Button>
 
             {/* Register Button */}
@@ -158,7 +180,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
               size="sm"
               onClick={() => openAuthModal("register")}
             >
-              Đăng ký
+              {text.register}
             </Button>
           </>
         )}
