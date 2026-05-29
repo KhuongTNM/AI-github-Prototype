@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import {
-  MessageCircle, FolderOpen, Plus, FileText, Sparkles, Search, Cloud,
+  MessageCircle, FolderOpen, Plus, FileText, Sparkles, Cloud,
   ChevronDown, ChevronRight, GraduationCap, LayoutGrid, Home, Trash2,
   LayoutDashboard, User, LogIn, HardDrive, X, Clock,
 } from "lucide-react"
@@ -14,14 +14,13 @@ interface SidebarProps {
   onNewChat: () => void
 }
 
-type NavPage = "home" | "documents" | "chat" | "cloud" | "search" | "profile" | "admin" | "trash"
+type NavPage = "home" | "documents" | "chat" | "cloud" | "profile" | "admin" | "trash"
 
 const navItems: { page: NavPage; icon: React.ElementType; label: { vi: string; en: string }; adminOnly?: boolean }[] = [
   { page: "home", icon: Home, label: { vi: "Trang chủ", en: "Home" } },
   { page: "chat", icon: MessageCircle, label: { vi: "AI Chatbot", en: "AI Chatbot" } },
   { page: "documents", icon: FolderOpen, label: { vi: "Tài liệu của tôi", en: "My Documents" } },
   { page: "cloud", icon: Cloud, label: { vi: "Cloud Storage", en: "Cloud Storage" } },
-  { page: "search", icon: Search, label: { vi: "Tìm kiếm", en: "Search" } },
   { page: "trash", icon: Trash2, label: { vi: "Thùng rác", en: "Trash" } },
   { page: "admin", icon: LayoutDashboard, label: { vi: "Admin Panel", en: "Admin Panel" }, adminOnly: true },
 ]
@@ -114,7 +113,10 @@ export function Sidebar({ onNewChat }: SidebarProps) {
             {text.menu}
           </p>
           {navItems
-            .filter(item => !item.adminOnly || currentUser?.role === "admin")
+            .filter(item => {
+              if (item.adminOnly) return currentUser?.role === "admin" || currentUser?.role === "sub-admin"
+              return true
+            })
             .map(item => (
               <button
                 key={item.page}
@@ -193,26 +195,6 @@ export function Sidebar({ onNewChat }: SidebarProps) {
           </div>
         )}
 
-        {/* Tools */}
-        <div className="mb-3">
-          <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-            {text.tools}
-          </p>
-          {[
-            { icon: FileText, label: text.summarize },
-            { icon: LayoutGrid, label: text.flashcards },
-            { icon: Sparkles, label: "AI Writer" },
-          ].map(tool => (
-            <button
-              key={tool.label}
-              onClick={() => handleNav("chat")}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            >
-              <tool.icon className="h-4 w-4" />
-              {tool.label}
-            </button>
-          ))}
-        </div>
       </nav>
 
       {/* Footer */}
@@ -223,7 +205,7 @@ export function Sidebar({ onNewChat }: SidebarProps) {
             <div className="flex items-center gap-2">
               <div className={cn(
                 "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-                currentUser.role === "admin" ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
+                currentUser.role === "admin" || currentUser.role === "sub-admin" ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
               )}>
                 {currentUser.displayName.slice(0, 2).toUpperCase()}
               </div>
@@ -233,7 +215,7 @@ export function Sidebar({ onNewChat }: SidebarProps) {
               </div>
             </div>
             {/* Storage Bar */}
-            {currentUser.role !== "admin" && (
+            {!["admin", "sub-admin"].includes(currentUser.role) && (
               <div>
                 <div className="mb-1 flex justify-between text-xs text-muted-foreground">
                   <span className="flex items-center gap-1"><HardDrive className="h-3 w-3" /> {text.storage}</span>
