@@ -73,7 +73,7 @@ export function ProfilePage() {
             <div className="relative">
               <div className={cn(
                 "flex h-20 w-20 items-center justify-center rounded-2xl text-2xl font-bold text-white",
-                currentUser.role === "admin" ? "bg-orange-500" : "bg-primary"
+                currentUser.role === "admin" || currentUser.role === "sub-admin" ? "bg-orange-500" : "bg-primary"
               )}>
                 {avatarInitials}
               </div>
@@ -87,9 +87,9 @@ export function ProfilePage() {
               <div className="mt-1 flex items-center gap-2">
                 <span className={cn(
                   "rounded-full px-2 py-0.5 text-xs font-medium",
-                  currentUser.role === "admin" ? "bg-orange-100 text-orange-700" : "bg-primary/10 text-primary"
+                  currentUser.role === "admin" || currentUser.role === "sub-admin" ? "bg-orange-100 text-orange-700" : "bg-primary/10 text-primary"
                 )}>
-                  {currentUser.role === "admin" ? "Admin" : "Sinh viên"}
+                  {currentUser.role === "admin" ? "Admin" : currentUser.role === "sub-admin" ? "Sub-admin" : "Sinh viên"}
                 </span>
                 {currentUser.emailVerified && (
                   <span className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
@@ -253,7 +253,7 @@ export function ProfilePage() {
               ))}
               <Button id="change-pass-btn" onClick={handleChangePassword}>Đổi mật khẩu</Button>
               <p className="text-xs text-muted-foreground">
-                Lưu ý: Bạn sẽ bị đăng xuất sau khi đổi mật khẩu (BR-14)
+                Lưu ý: Bạn sẽ bị đăng xuất sau khi đổi mật khẩu 
               </p>
             </div>
           )}

@@ -1,6 +1,7 @@
 "use client"
 
-import { Moon, Sun, Sparkles, ChevronDown, LogOut, User, Settings, LayoutDashboard, Bell } from "lucide-react"
+// Đã loại bỏ Settings và Bell khỏi danh sách import
+import { Moon, Sun, ChevronDown, LogOut, User, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -24,9 +25,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
     description: "Hệ thống quản lý tài liệu học tập AI",
     light: "Chế độ sáng",
     dark: "Chế độ tối",
-    upgrade: "Nâng cấp",
     profile: "Hồ sơ cá nhân",
-    settings: "Cài đặt",
     logout: "Đăng xuất",
     login: "Đăng nhập",
     register: "Đăng ký",
@@ -34,9 +33,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
     description: "AI-powered study document management system",
     light: "Light mode",
     dark: "Dark mode",
-    upgrade: "Upgrade",
     profile: "Profile",
-    settings: "Settings",
     logout: "Log out",
     login: "Log in",
     register: "Sign up",
@@ -85,20 +82,6 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
 
         {currentUser ? (
           <>
-            {/* Notifications */}
-            <Button variant="ghost" size="icon" className="relative text-muted-foreground">
-              <Bell className="h-4 w-4" />
-              <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
-            </Button>
-
-            {/* Upgrade (for regular users) */}
-            {currentUser.role === "user" && (
-              <Button variant="outline" size="sm" className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5">
-                <Sparkles className="h-4 w-4" />
-                {text.upgrade}
-              </Button>
-            )}
-
             {/* User Avatar Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -108,7 +91,7 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
                 >
                   <div className={cn(
                     "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold",
-                    currentUser.role === "admin"
+                    currentUser.role === "admin" || currentUser.role === "sub-admin"
                       ? "bg-orange-500 text-white"
                       : "bg-primary text-primary-foreground"
                   )}>
@@ -126,11 +109,11 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
                   <p className="text-xs text-muted-foreground">{currentUser.email}</p>
                   <span className={cn(
                     "mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium",
-                    currentUser.role === "admin"
+                    currentUser.role === "admin" || currentUser.role === "sub-admin"
                       ? "bg-orange-100 text-orange-700"
                       : "bg-primary/10 text-primary"
                   )}>
-                    {currentUser.role === "admin" ? "Admin" : "User"}
+                    {currentUser.role === "admin" ? "Admin" : currentUser.role === "sub-admin" ? "Sub-admin" : "User"}
                   </span>
                 </div>
                 <DropdownMenuSeparator />
@@ -138,16 +121,12 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
                   <User className="mr-2 h-4 w-4" />
                   {text.profile}
                 </DropdownMenuItem>
-                {currentUser.role === "admin" && (
+                {(currentUser.role === "admin" || currentUser.role === "sub-admin") && (
                   <DropdownMenuItem id="go-admin" onClick={() => setCurrentPage("admin")}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Admin Panel
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => setCurrentPage("home")}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  {text.settings}
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem id="logout-btn" onClick={logout} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
@@ -158,12 +137,6 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
           </>
         ) : (
           <>
-            {/* Upgrade Button */}
-            <Button variant="outline" size="sm" className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5">
-              <Sparkles className="h-4 w-4" />
-              {text.upgrade}
-            </Button>
-
             {/* Login Button */}
             <Button
               id="login-btn"

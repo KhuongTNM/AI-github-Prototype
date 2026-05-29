@@ -3,16 +3,18 @@
 import { useState } from "react"
 import {
   Cloud, HardDrive, Upload, FileText, CheckCircle2,
-  AlertCircle, RefreshCw, Shield, Wifi, Zap,
+  AlertCircle, RefreshCw, Shield, Wifi, Zap, Download, Trash2,
+  Eye, X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useApp, formatBytes } from "@/lib/store"
 
 export function CloudStorage() {
-  const { currentUser, documents, openAuthModal } = useApp()
+  const { currentUser, documents, openAuthModal, deleteDocument, updateDocument } = useApp()
   const [syncing, setSyncing] = useState(false)
   const [syncDone, setSyncDone] = useState(false)
+  const [reviewDocId, setReviewDocId] = useState<string | null>(null)
 
   if (!currentUser) {
     return (
@@ -28,6 +30,7 @@ export function CloudStorage() {
   const readyDocs = documents.filter(d => d.status === "ready")
   const storagePercent = Math.round((currentUser.storageUsed / currentUser.storageLimit) * 100)
   const totalDownloads = readyDocs.reduce((sum, d) => sum + d.downloadCount, 0)
+  const reviewDoc = readyDocs.find(doc => doc.id === reviewDocId)
 
   const handleSync = async () => {
     setSyncing(true)
@@ -35,6 +38,10 @@ export function CloudStorage() {
     setSyncing(false)
     setSyncDone(true)
     setTimeout(() => setSyncDone(false), 3000)
+  }
+
+  const handleDownload = (id: string) => {
+    updateDocument(id, { downloadCount: (documents.find(d => d.id === id)?.downloadCount ?? 0) + 1 })
   }
 
   const stats = [
@@ -142,7 +149,7 @@ export function CloudStorage() {
             {readyDocs.map(doc => (
               <div
                 key={doc.id}
-                className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
+                className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition-all hover:border-primary/30 hover:shadow-sm"
               >
                 <div className={cn(
                   "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
@@ -155,11 +162,43 @@ export function CloudStorage() {
                   <p className="truncate text-sm font-medium text-foreground">{doc.name}</p>
                   <p className="text-xs text-muted-foreground">{doc.size} • {doc.uploadedAt.toLocaleDateString("vi-VN")}</p>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
-                    <CheckCircle2 className="h-3 w-3 text-green-600" />
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-xs text-green-600 mr-1">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
+                      <CheckCircle2 className="h-3 w-3 text-green-600" />
+                    </div>
+                    <span className="hidden sm:inline">Đã sync</span>
                   </div>
-                  <span className="text-green-600">Đã sync</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs"
+                    onClick={() => setReviewDocId(doc.id)}
+                    title="Review file"
+                  >
+                    <Eye className="h-3 w-3" />
+                    <span className="hidden sm:inline">Review</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs"
+                    onClick={() => handleDownload(doc.id)}
+                    title="Tải về"
+                  >
+                    <Download className="h-3 w-3" />
+                    <span className="hidden sm:inline">Tải về</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs text-destructive hover:text-destructive hover:border-destructive/50"
+                    onClick={() => deleteDocument(doc.id)}
+                    title="Xóa"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    <span className="hidden sm:inline">Xóa</span>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -173,6 +212,31 @@ export function CloudStorage() {
           </div>
         </div>
       </div>
+
+      {reviewDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-lg border border-border bg-card p-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-semibold text-foreground">Review file</h3>
+              <Button variant="ghost" size="icon" onClick={() => setReviewDocId(null)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
+              <div className={cn(
+                "mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl text-sm font-bold",
+                reviewDoc.type === "pdf" ? "bg-red-100 text-red-600" :
+                reviewDoc.type === "docx" ? "bg-blue-100 text-blue-600" : "bg-orange-100 text-orange-600"
+              )}>
+                {reviewDoc.type.toUpperCase()}
+              </div>
+              <p className="font-medium text-foreground">{reviewDoc.name}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{reviewDoc.size} • {reviewDoc.uploadedAt.toLocaleDateString("vi-VN")}</p>
+              <p className="mt-3 text-sm text-muted-foreground">Bản prototype hiển thị thông tin file để review nhanh trước khi tải xuống.</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

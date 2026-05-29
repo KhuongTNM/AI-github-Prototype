@@ -7,7 +7,6 @@ import { AuthModal } from "@/components/auth/auth-modal"
 import { EnhancedChatInterface } from "@/components/chat-interface"
 import { DocumentManager } from "@/components/documents/document-manager"
 import { TrashPage } from "@/components/documents/trash-page"
-import { SearchPanel } from "@/components/search/search-panel"
 import { ProfilePage } from "@/components/profile/profile-page"
 import { CloudStorage } from "@/components/cloud/cloud-storage"
 import { AdminDashboard } from "@/components/admin/admin-dashboard"
@@ -16,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { useApp } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import {
-  Sparkles, Menu, X, FileText, Bot, Cloud, Upload, Search,
+  Sparkles, Menu, X, FileText, Bot, Cloud,
   Star, Users, Shield, Zap, BookOpen, GraduationCap,
 } from "lucide-react"
 
@@ -82,13 +81,6 @@ function HomePage() {
       desc: text.docsDesc,
       color: "from-blue-500 to-cyan-600",
       page: "documents" as const,
-    },
-    {
-      icon: Search,
-      label: text.search,
-      desc: text.searchDesc,
-      color: "from-emerald-500 to-green-600",
-      page: "search" as const,
     },
     {
       icon: Cloud,
@@ -218,8 +210,6 @@ export default function AIStudyHub() {
         return <div className="flex flex-1 flex-col overflow-hidden"><DocumentManager /></div>
       case "cloud":
         return <div className="flex flex-1 flex-col overflow-hidden"><CloudStorage /></div>
-      case "search":
-        return <div className="flex flex-1 flex-col overflow-hidden"><SearchPanel /></div>
       case "profile":
         return <div className="flex flex-1 flex-col overflow-hidden"><ProfilePage /></div>
       case "admin":
