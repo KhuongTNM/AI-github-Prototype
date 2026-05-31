@@ -4,6 +4,7 @@ import { useState } from "react"
 import {
   MessageCircle, FolderOpen, Plus, FileText, Sparkles, Cloud,
   ChevronDown, ChevronRight, GraduationCap, LayoutGrid, Home, Trash2,
+  BookOpen,
   LayoutDashboard, User, LogIn, HardDrive, X, Clock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -14,12 +15,13 @@ interface SidebarProps {
   onNewChat: () => void
 }
 
-type NavPage = "home" | "documents" | "chat" | "cloud" | "profile" | "admin" | "trash"
+type NavPage = "home" | "documents" | "chat" | "cloud" | "profile" | "admin" | "trash" | "flashcards"
 
 const navItems: { page: NavPage; icon: React.ElementType; label: { vi: string; en: string }; adminOnly?: boolean }[] = [
   { page: "home", icon: Home, label: { vi: "Trang chủ", en: "Home" } },
   { page: "chat", icon: MessageCircle, label: { vi: "AI Chatbot", en: "AI Chatbot" } },
   { page: "documents", icon: FolderOpen, label: { vi: "Tài liệu của tôi", en: "My Documents" } },
+  { page: "flashcards", icon: BookOpen, label: { vi: "Flashcards", en: "Flashcards" } },
   { page: "cloud", icon: Cloud, label: { vi: "Cloud Storage", en: "Cloud Storage" } },
   { page: "trash", icon: Trash2, label: { vi: "Thùng rác", en: "Trash" } },
   { page: "admin", icon: LayoutDashboard, label: { vi: "Admin Panel", en: "Admin Panel" }, adminOnly: true },
