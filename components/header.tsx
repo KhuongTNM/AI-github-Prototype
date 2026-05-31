@@ -1,7 +1,7 @@
 "use client"
 
 // Đã loại bỏ Settings và Bell khỏi danh sách import
-import { Moon, Sun, ChevronDown, LogOut, User, LayoutDashboard } from "lucide-react"
+import { CreditCard, Moon, Sun, ChevronDown, LogOut, User, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -46,6 +46,17 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
     .slice(0, 2)
     .toUpperCase()
 
+  const openPackages = () => {
+    if (!currentUser) {
+      openAuthModal("login")
+      return
+    }
+
+    sessionStorage.setItem("profile-tab", "packages")
+    setCurrentPage("profile")
+    window.dispatchEvent(new Event("profile-tab-packages"))
+  }
+
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-background px-4 sticky top-0 z-20">
       {/* Description Text */}
@@ -79,6 +90,16 @@ export function Header({ onLogin, onRegister }: HeaderProps) {
             <DropdownMenuItem onClick={() => setLanguage("en")}>English</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <Button
+          id="buy-plan-btn"
+          size="sm"
+          className="gap-1.5"
+          onClick={openPackages}
+        >
+          <CreditCard className="h-4 w-4" />
+          <span className="hidden sm:inline">{language === "vi" ? "Mua gói" : "Buy plan"}</span>
+        </Button>
 
         {currentUser ? (
           <>

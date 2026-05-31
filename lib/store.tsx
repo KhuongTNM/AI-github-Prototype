@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type UserRole = "guest" | "user" | "sub-admin" | "admin"
+export type PackageTier = "free" | "2-4" | "5+"
 
 export interface User {
   id: string
@@ -20,6 +21,39 @@ export interface User {
   lastActive: Date
   storageUsed: number
   storageLimit: number
+  subscriptionTier?: PackageTier
+  subscriptionExpiresAt?: Date
+}
+
+export interface PackagePrice {
+  id: string
+  name: string
+  tier: PackageTier
+  price: number
+  maxUsers: number
+}
+
+export interface RoomMessage {
+  id: string
+  senderId: string
+  senderName: string
+  content: string
+  timestamp: Date
+}
+
+export interface StudyRoom {
+  id: string
+  password?: string
+  hostId: string
+  hostName: string
+  capacity: number
+  members: {
+    userId: string
+    displayName: string
+    joinedAt: Date
+  }[]
+  messages: RoomMessage[]
+  createdAt: Date
 }
 
 export interface Category {
@@ -108,6 +142,8 @@ const MOCK_ADMIN: User = {
   lastActive: new Date(),
   storageUsed: 1024 * 1024 * 200,
   storageLimit: 1024 * 1024 * 1024 * 5,
+  subscriptionTier: "5+",
+  subscriptionExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
 }
 
 const MOCK_SUB_ADMIN: User = {
@@ -123,6 +159,8 @@ const MOCK_SUB_ADMIN: User = {
   lastActive: new Date(),
   storageUsed: 1024 * 1024 * 10,
   storageLimit: 1024 * 1024 * 1024,
+  subscriptionTier: "5+",
+  subscriptionExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
 }
 
 const MOCK_USERS: User[] = [
@@ -141,6 +179,7 @@ const MOCK_USERS: User[] = [
     lastActive: new Date("2026-05-26"),
     storageUsed: 1024 * 1024 * 45,
     storageLimit: 1024 * 1024 * 512,
+    subscriptionTier: "free",
   },
   {
     id: "user-2",
@@ -155,6 +194,8 @@ const MOCK_USERS: User[] = [
     lastActive: new Date("2026-05-25"),
     storageUsed: 1024 * 1024 * 120,
     storageLimit: 1024 * 1024 * 512,
+    subscriptionTier: "2-4",
+    subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   },
   {
     id: "user-3",
@@ -169,7 +210,25 @@ const MOCK_USERS: User[] = [
     lastActive: new Date("2026-05-20"),
     storageUsed: 1024 * 1024 * 80,
     storageLimit: 1024 * 1024 * 512,
+    subscriptionTier: "free",
   },
+]
+
+const MOCK_ROOMS: StudyRoom[] = [
+  {
+    id: "ROOM-101",
+    password: "123",
+    hostId: "user-2",
+    hostName: "AnhNV",
+    capacity: 4,
+    members: [
+      { userId: "user-2", displayName: "AnhNV", joinedAt: new Date() }
+    ],
+    messages: [
+      { id: "msg-r1", senderId: "user-2", senderName: "AnhNV", content: "Chào mọi người! Ai học nhóm cùng mình giải tích 1 không?", timestamp: new Date(Date.now() - 10 * 60 * 1000) }
+    ],
+    createdAt: new Date()
+  }
 ]
 
 const MOCK_DOCUMENTS: Document[] = [
@@ -296,6 +355,9 @@ interface AppState {
   showAuthModal: boolean
   authModalTab: "login" | "register" | "forgot"
   currentPage: "home" | "documents" | "chat" | "cloud" | "profile" | "admin" | "trash" | "flashcards"
+  packagePrices: PackagePrice[]
+  rooms: StudyRoom[]
+  currentRoomId: string | null
   login: (email: string, password: string) => { success: boolean; error?: string }
   register: (email: string, password: string, displayName: string) => { success: boolean; error?: string }
   logout: () => void
@@ -323,6 +385,14 @@ interface AppState {
   setFlashcardSelectedDocumentId: (id: string | "all") => void
   toggleDarkMode: () => void
   setLanguage: (language: Language) => void
+  updatePackagePrice: (tier: PackageTier, newPrice: number) => { success: boolean; error?: string }
+  grantSubscription: (userId: string, tier: PackageTier, durationMonths: number) => { success: boolean; error?: string }
+  buySubscription: (tier: PackageTier) => { success: boolean; error?: string }
+  createRoom: (roomId: string, password?: string) => { success: boolean; error?: string }
+  joinRoom: (roomId: string, password?: string) => { success: boolean; error?: string }
+  leaveRoom: () => void
+  closeRoom: () => void
+  sendRoomMessage: (content: string) => void
 }
 
 const AppContext = createContext<AppState | null>(null)
@@ -330,6 +400,13 @@ const AppContext = createContext<AppState | null>(null)
 export function AppProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [users, setUsers] = useState<User[]>(MOCK_USERS)
+  const [packagePrices, setPackagePrices] = useState<PackagePrice[]>([
+    { id: "pkg-free", name: "Gói Free", tier: "free", price: 0, maxUsers: 1 },
+    { id: "pkg-medium", name: "Gói 2-4 người", tier: "2-4", price: 99000, maxUsers: 4 },
+    { id: "pkg-large", name: "Gói 5+ người", tier: "5+", price: 199000, maxUsers: 99 }
+  ])
+  const [rooms, setRooms] = useState<StudyRoom[]>(MOCK_ROOMS)
+  const [currentRoomId, setCurrentRoomId] = useState<string | null>(null)
   const [documents, setDocuments] = useState<Document[]>(MOCK_DOCUMENTS)
   const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES)
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
@@ -396,6 +473,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       role: "user", isLocked: false, emailVerified: false,
       createdAt: new Date(), loginAttempts: 0, lastActive: new Date(),
       storageUsed: 0, storageLimit: 1024 * 1024 * 512,
+      subscriptionTier: "free",
     }
     setUsers(prev => [...prev, newUser])
     setCurrentUser(newUser)
@@ -588,16 +666,398 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const updatePackagePrice = useCallback((tier: PackageTier, newPrice: number) => {
+    setPackagePrices(prev => prev.map(p => p.tier === tier ? { ...p, price: newPrice } : p))
+
+    if (currentUser) {
+      const tierName = tier === "2-4" ? "Gói 2-4 người" : "Gói 5+ người"
+      setActivityLogs(prev => [{
+        id: `log-${Date.now()}`,
+        userId: currentUser.id,
+        action: `Cập nhật giá ${tierName}`,
+        target: `${newPrice.toLocaleString("vi-VN")}đ/tháng`,
+        timestamp: new Date(),
+      }, ...prev])
+    }
+    return { success: true }
+  }, [currentUser])
+
+  const grantSubscription = useCallback((userId: string, tier: PackageTier, durationMonths: number) => {
+    if (!currentUser || !["admin", "sub-admin"].includes(currentUser.role)) {
+      return { success: false, error: "Không có quyền thực hiện." }
+    }
+
+    const targetUser = users.find(u => u.id === userId)
+    if (!targetUser) return { success: false, error: "Không tìm thấy người dùng." }
+
+    if (currentUser.role === "sub-admin" && targetUser.role === "admin") {
+      return { success: false, error: "Sub-admin không thể cấp gói cho Admin." }
+    }
+
+    const expiresAt = tier === "free"
+      ? undefined
+      : new Date(Date.now() + durationMonths * 30 * 24 * 60 * 60 * 1000)
+
+    setUsers(prev => prev.map(u => u.id === userId ? {
+      ...u,
+      subscriptionTier: tier,
+      subscriptionExpiresAt: expiresAt
+    } : u))
+
+    if (currentUser.id === userId) {
+      setCurrentUser(prev => prev ? {
+        ...prev,
+        subscriptionTier: tier,
+        subscriptionExpiresAt: expiresAt
+      } : prev)
+    }
+
+    const tierName = tier === "free" ? "Free" : tier === "2-4" ? "2-4 người" : "5+ người"
+    setActivityLogs(prev => [{
+      id: `log-${Date.now()}`,
+      userId: currentUser.id,
+      action: `Cấp gói ${tierName} (${durationMonths} tháng)`,
+      target: targetUser.email,
+      timestamp: new Date(),
+    }, ...prev])
+
+    return { success: true }
+  }, [currentUser, users])
+
+  const buySubscription = useCallback((tier: PackageTier) => {
+    if (!currentUser) return { success: false, error: "Vui lòng đăng nhập." }
+
+    const expiresAt = tier === "free"
+      ? undefined
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? {
+      ...u,
+      subscriptionTier: tier,
+      subscriptionExpiresAt: expiresAt
+    } : u))
+
+    setCurrentUser(prev => prev ? {
+      ...prev,
+      subscriptionTier: tier,
+      subscriptionExpiresAt: expiresAt
+    } : prev)
+
+    const tierName = tier === "free" ? "Free" : tier === "2-4" ? "2-4 người" : "5+ người"
+    setActivityLogs(prev => [{
+      id: `log-${Date.now()}`,
+      userId: currentUser.id,
+      action: `Đăng ký mua gói ${tierName}`,
+      target: currentUser.email,
+      timestamp: new Date(),
+    }, ...prev])
+
+    return { success: true }
+  }, [currentUser])
+
+  const createRoom = useCallback((roomId: string, password?: string) => {
+    if (!currentUser) return { success: false, error: "Vui lòng đăng nhập." }
+
+    const isPaid = currentUser.role === "admin" ||
+                   currentUser.role === "sub-admin" ||
+                   (currentUser.subscriptionTier &&
+                    currentUser.subscriptionTier !== "free" &&
+                    currentUser.subscriptionExpiresAt &&
+                    new Date(currentUser.subscriptionExpiresAt).getTime() > Date.now())
+
+    if (!isPaid) {
+      return { success: false, error: "Vui lòng nâng cấp gói để có quyền tạo phòng học." }
+    }
+
+    if (!roomId.trim()) {
+      return { success: false, error: "Mã phòng không được để trống." }
+    }
+
+    const trimmedId = roomId.trim().toUpperCase()
+
+    if (rooms.some(r => r.id === trimmedId)) {
+      return { success: false, error: "Mã phòng này đã tồn tại." }
+    }
+
+    const cap = currentUser.subscriptionTier === "2-4" ? 4 : 99
+
+    const newRoom: StudyRoom = {
+      id: trimmedId,
+      password: password || undefined,
+      hostId: currentUser.id,
+      hostName: currentUser.displayName,
+      capacity: cap,
+      members: [
+        { userId: currentUser.id, displayName: currentUser.displayName, joinedAt: new Date() }
+      ],
+      messages: [
+        {
+          id: `msg-sys-${Date.now()}`,
+          senderId: "system",
+          senderName: "Hệ thống",
+          content: `Phòng học ${trimmedId} đã được tạo bởi ${currentUser.displayName}.`,
+          timestamp: new Date()
+        }
+      ],
+      createdAt: new Date()
+    }
+
+    setRooms(prev => [...prev, newRoom])
+    setCurrentRoomId(trimmedId)
+
+    setActivityLogs(prev => [{
+      id: `log-${Date.now()}`,
+      userId: currentUser.id,
+      action: "Tạo phòng học nhóm",
+      target: trimmedId,
+      timestamp: new Date(),
+    }, ...prev])
+
+    // Simulated mock member joining after 4 seconds
+    setTimeout(() => {
+      setRooms(prev => prev.map(r => {
+        if (r.id === trimmedId) {
+          const isUser2Host = r.hostId === "user-2"
+          const simUser = isUser2Host
+            ? { userId: "user-1", displayName: "Demo Student" }
+            : { userId: "user-2", displayName: "AnhNV" }
+
+          const joinMsg: RoomMessage = {
+            id: `msg-sys-sim-${Date.now()}`,
+            senderId: "system",
+            senderName: "Hệ thống",
+            content: `${simUser.displayName} đã tham gia phòng.`,
+            timestamp: new Date()
+          }
+
+          const chatMsg: RoomMessage = {
+            id: `msg-sim-${Date.now()}`,
+            senderId: simUser.userId,
+            senderName: simUser.displayName,
+            content: `Chào chủ phòng! Mình xin phép join cùng học nhé. Cậu định thảo luận môn gì thế?`,
+            timestamp: new Date()
+          }
+
+          return {
+            ...r,
+            members: [...r.members, { userId: simUser.userId, displayName: simUser.displayName, joinedAt: new Date() }],
+            messages: [...r.messages, joinMsg, chatMsg]
+          }
+        }
+        return r
+      }))
+    }, 4000)
+
+    return { success: true }
+  }, [currentUser, rooms])
+
+  const joinRoom = useCallback((roomId: string, password?: string) => {
+    if (!currentUser) return { success: false, error: "Vui lòng đăng nhập." }
+    if (!roomId.trim()) return { success: false, error: "Mã phòng không được để trống." }
+
+    const targetRoomId = roomId.trim().toUpperCase()
+    const targetRoom = rooms.find(r => r.id === targetRoomId)
+
+    if (!targetRoom) {
+      return { success: false, error: "Phòng học không tồn tại." }
+    }
+
+    if (targetRoom.password && targetRoom.password !== password) {
+      return { success: false, error: "Mật khẩu phòng không đúng." }
+    }
+
+    const isMember = targetRoom.members.some(m => m.userId === currentUser.id)
+    if (!isMember) {
+      if (targetRoom.members.length >= targetRoom.capacity) {
+        return { success: false, error: "Phòng học đã đầy." }
+      }
+
+      const updatedMembers = [
+        ...targetRoom.members,
+        { userId: currentUser.id, displayName: currentUser.displayName, joinedAt: new Date() }
+      ]
+
+      const joinMsg: RoomMessage = {
+        id: `msg-sys-${Date.now()}`,
+        senderId: "system",
+        senderName: "Hệ thống",
+        content: `${currentUser.displayName} đã tham gia phòng.`,
+        timestamp: new Date()
+      }
+
+      setRooms(prev => prev.map(r => r.id === targetRoomId ? {
+        ...r,
+        members: updatedMembers,
+        messages: [...r.messages, joinMsg]
+      } : r))
+    }
+
+    setCurrentRoomId(targetRoomId)
+
+    setActivityLogs(prev => [{
+      id: `log-${Date.now()}`,
+      userId: currentUser.id,
+      action: "Tham gia phòng học nhóm",
+      target: targetRoomId,
+      timestamp: new Date(),
+    }, ...prev])
+
+    setTimeout(() => {
+      setRooms(prev => prev.map(r => {
+        if (r.id === targetRoomId) {
+          const hostIsSelf = r.hostId === currentUser.id
+          if (!hostIsSelf) {
+            const simulatedMsg: RoomMessage = {
+              id: `msg-sim-${Date.now()}`,
+              senderId: r.hostId,
+              senderName: r.hostName,
+              content: `Chào ${currentUser.displayName}! Chào mừng bạn vào phòng cùng thảo luận nhé. Bạn cần hỗ trợ gì không?`,
+              timestamp: new Date()
+            }
+            return {
+              ...r,
+              messages: [...r.messages, simulatedMsg]
+            }
+          }
+        }
+        return r
+      }))
+    }, 2000)
+
+    return { success: true }
+  }, [currentUser, rooms])
+
+  const leaveRoom = useCallback(() => {
+    if (!currentUser || !currentRoomId) return
+
+    const targetRoomId = currentRoomId
+    const targetRoom = rooms.find(r => r.id === targetRoomId)
+    if (!targetRoom) return
+
+    const isHost = targetRoom.hostId === currentUser.id
+
+    if (isHost) {
+      closeRoom()
+      return
+    }
+
+    const updatedMembers = targetRoom.members.filter(m => m.userId !== currentUser.id)
+    const leaveMsg: RoomMessage = {
+      id: `msg-sys-${Date.now()}`,
+      senderId: "system",
+      senderName: "Hệ thống",
+      content: `${currentUser.displayName} đã rời phòng.`,
+      timestamp: new Date()
+    }
+
+    setRooms(prev => prev.map(r => r.id === targetRoomId ? {
+      ...r,
+      members: updatedMembers,
+      messages: [...r.messages, leaveMsg]
+    } : r))
+
+    setCurrentRoomId(null)
+
+    setActivityLogs(prev => [{
+      id: `log-${Date.now()}`,
+      userId: currentUser.id,
+      action: "Rời phòng học nhóm",
+      target: targetRoomId,
+      timestamp: new Date(),
+    }, ...prev])
+  }, [currentUser, currentRoomId, rooms])
+
+  const closeRoom = useCallback(() => {
+    if (!currentUser || !currentRoomId) return
+
+    const targetRoomId = currentRoomId
+    const targetRoom = rooms.find(r => r.id === targetRoomId)
+    if (!targetRoom || targetRoom.hostId !== currentUser.id) return
+
+    setRooms(prev => prev.filter(r => r.id !== targetRoomId))
+    setCurrentRoomId(null)
+
+    setActivityLogs(prev => [{
+      id: `log-${Date.now()}`,
+      userId: currentUser.id,
+      action: "Đóng phòng học nhóm (Host)",
+      target: targetRoomId,
+      timestamp: new Date(),
+    }, ...prev])
+  }, [currentUser, currentRoomId, rooms])
+
+  const sendRoomMessage = useCallback((content: string) => {
+    if (!currentUser || !currentRoomId || !content.trim()) return
+
+    const newMsg: RoomMessage = {
+      id: `msg-${Date.now()}`,
+      senderId: currentUser.id,
+      senderName: currentUser.displayName,
+      content: content.trim(),
+      timestamp: new Date()
+    }
+
+    setRooms(prev => prev.map(r => r.id === currentRoomId ? {
+      ...r,
+      messages: [...r.messages, newMsg]
+    } : r))
+
+    const lowerContent = content.toLowerCase()
+    if (lowerContent.includes("chào") || lowerContent.includes("hello") || lowerContent.includes("hi")) {
+      setTimeout(() => {
+        setRooms(prev => prev.map(r => {
+          if (r.id === currentRoomId) {
+            const hostIsSelf = r.hostId === currentUser.id
+            const responderId = hostIsSelf ? (r.members.find(m => m.userId !== currentUser.id)?.userId || "user-2") : r.hostId
+            const responderName = hostIsSelf ? (r.members.find(m => m.userId !== currentUser.id)?.displayName || "AnhNV") : r.hostName
+
+            const replyMsg: RoomMessage = {
+              id: `msg-sim-${Date.now()}`,
+              senderId: responderId,
+              senderName: responderName,
+              content: `Chào ${currentUser.displayName}! Hôm nay bạn định ôn tập nội dung gì thế?`,
+              timestamp: new Date()
+            }
+            return { ...r, messages: [...r.messages, replyMsg] }
+          }
+          return r
+        }))
+      }, 2500)
+    } else if (lowerContent.includes("bài tập") || lowerContent.includes("ôn") || lowerContent.includes("tài liệu")) {
+      setTimeout(() => {
+        setRooms(prev => prev.map(r => {
+          if (r.id === currentRoomId) {
+            const hostIsSelf = r.hostId === currentUser.id
+            const responderId = hostIsSelf ? (r.members.find(m => m.userId !== currentUser.id)?.userId || "user-2") : r.hostId
+            const responderName = hostIsSelf ? (r.members.find(m => m.userId !== currentUser.id)?.displayName || "AnhNV") : r.hostName
+
+            const replyMsg: RoomMessage = {
+              id: `msg-sim-${Date.now()}`,
+              senderId: responderId,
+              senderName: responderName,
+              content: `Mình có tài liệu giải tích khá hay ở phần Tài liệu của tôi đó, bạn đã xem thử chưa?`,
+              timestamp: new Date()
+            }
+            return { ...r, messages: [...r.messages, replyMsg] }
+          }
+          return r
+        }))
+      }, 3000)
+    }
+  }, [currentUser, currentRoomId])
+
   return (
     <AppContext.Provider value={{
       currentUser, users, documents, categories, chatSessions, activeChatId,
       activityLogs, flashcards, flashcardSelectedDocumentId, isDarkMode, language, showAuthModal, authModalTab, currentPage,
+      packagePrices, rooms, currentRoomId,
       login, register, logout, openAuthModal, closeAuthModal, setCurrentPage,
       addDocument, updateDocument, deleteDocument, restoreDocument,
       addChatSession, updateChatSession, setActiveChatId,
       updateUser, toggleUserLock, resetUserPassword, deleteUserAccount, createSubAdminAccount, addCategory, deleteCategory,
       addFlashcards, generateFlashcardsFromDocument, setFlashcardSelectedDocumentId,
       toggleDarkMode, setLanguage,
+      updatePackagePrice, grantSubscription, buySubscription, createRoom, joinRoom, leaveRoom, closeRoom, sendRoomMessage,
     }}>
       {children}
     </AppContext.Provider>
