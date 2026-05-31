@@ -3,11 +3,11 @@
 import { useMemo, useState } from "react"
 import {
   HardDrive, KeyRound, LayoutDashboard, Lock, Plus, RotateCcw,
-  Search, Trash2, Unlock, Users,
+  Search, Sparkles, Trash2, Unlock, Users,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useApp, formatBytes, type User } from "@/lib/store"
+import { useApp, formatBytes, type PackageTier, type User } from "@/lib/store"
 
 type PendingAction = { label: string; run: () => void } | null
 
@@ -15,6 +15,7 @@ export function AdminDashboard() {
   const {
     currentUser, users, documents, language, setCurrentPage, updateUser,
     toggleUserLock, resetUserPassword, deleteUserAccount, createSubAdminAccount,
+    packagePrices, updatePackagePrice, grantSubscription,
   } = useApp()
   const [userSearch, setUserSearch] = useState("")
   const [message, setMessage] = useState("")
@@ -23,6 +24,10 @@ export function AdminDashboard() {
   const [resetTarget, setResetTarget] = useState<User | null>(null)
   const [newPassword, setNewPassword] = useState("Reset1234")
   const [subAdminForm, setSubAdminForm] = useState({ displayName: "", email: "", password: "" })
+
+  const [grantTarget, setGrantTarget] = useState<User | null>(null)
+  const [grantTier, setGrantTier] = useState<PackageTier>("2-4")
+  const [grantDuration, setGrantDuration] = useState<number>(1)
 
   const isAdmin = currentUser?.role === "admin"
   const isSubAdmin = currentUser?.role === "sub-admin"
@@ -188,6 +193,44 @@ export function AdminDashboard() {
           </section>
         )}
 
+        {/* Cấu hình giá gói dịch vụ */}
+        <section className="mb-6 rounded-lg border border-border bg-card p-4">
+          <h2 className="mb-3 font-semibold text-foreground flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            Cấu hình giá các gói dịch vụ
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {packagePrices.filter(p => p.tier !== "free").map(pkg => {
+              return (
+                <div key={pkg.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-background p-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{pkg.name}</p>
+                    <p className="text-xs text-muted-foreground">Tối đa {pkg.maxUsers} người tham gia phòng</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="5000"
+                      defaultValue={pkg.price}
+                      onBlur={e => {
+                        const newPrice = Number(e.target.value)
+                        if (!isNaN(newPrice) && newPrice >= 0) {
+                          requirePassword(`Cập nhật giá ${pkg.name}`, () => {
+                            updatePackagePrice(pkg.tier, newPrice)
+                          })
+                        }
+                      }}
+                      className="h-9 w-28 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <span className="text-xs text-muted-foreground">VND/tháng</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
         <section className="rounded-lg border border-border bg-card p-4">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-semibold text-foreground">{text.accounts}</h2>
@@ -214,6 +257,13 @@ export function AdminDashboard() {
                   GB
                 </label>
                 <div className="ml-auto flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" disabled={!canTouchAccount(user)} onClick={() => {
+                    setGrantTarget(user)
+                    setGrantTier(user.subscriptionTier || "free")
+                    setGrantDuration(1)
+                  }}>
+                    <Sparkles className="mr-1.5 h-3.5 w-3.5 text-primary" />Cấp gói
+                  </Button>
                   <Button size="sm" variant="outline" disabled={!canTouchAccount(user)} onClick={() => setResetTarget(user)}>
                     <RotateCcw className="mr-1.5 h-3.5 w-3.5" />{text.reset}
                   </Button>
@@ -265,6 +315,61 @@ export function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Modal Cấp Gói Dịch Vụ */}
+      {grantTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-lg border border-border bg-card p-5 shadow-xl">
+            <h3 className="text-lg font-semibold text-foreground">Cấp gói dịch vụ cho: {grantTarget.email}</h3>
+
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">Chọn gói dịch vụ</label>
+                <select
+                  value={grantTier}
+                  onChange={e => setGrantTier(e.target.value as any)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="free">Gói Free (Hủy gói)</option>
+                  <option value="2-4">Gói 2-4 người</option>
+                  <option value="5+">Gói 5+ người</option>
+                </select>
+              </div>
+
+              {grantTier !== "free" && (
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1">Thời hạn sử dụng (Gia hạn thêm)</label>
+                  <select
+                    value={grantDuration}
+                    onChange={e => setGrantDuration(Number(e.target.value))}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value={1}>1 tháng</option>
+                    <option value={3}>3 tháng</option>
+                    <option value={6}>6 tháng</option>
+                    <option value={12}>12 tháng</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setGrantTarget(null)}>Hủy</Button>
+              <Button onClick={() => {
+                requirePassword(`Cấp gói ${grantTier === "free" ? "Free" : grantTier === "2-4" ? "2-4 người" : "5+ người"} cho ${grantTarget.email}`, () => {
+                  const res = grantSubscription(grantTarget.id, grantTier, grantDuration)
+                  runAccountAction(res, "Đã cấp gói dịch vụ thành công.")
+                  if (res.success) {
+                    const storageLimit = grantTier === "free" ? 1024 * 1024 * 512 : grantTier === "2-4" ? 1024 * 1024 * 1024 : 1024 * 1024 * 1024 * 5
+                    updateUser(grantTarget.id, { storageLimit })
+                  }
+                })
+                setGrantTarget(null)
+              }}>Xác nhận</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -282,6 +387,14 @@ function Stat({ icon: Icon, label, value }: { icon: React.ElementType; label: st
 }
 
 function UserSummary({ user, docs }: { user: User; docs: number }) {
+  const getPackageLabel = (u: User) => {
+    if (u.role === "admin" || u.role === "sub-admin") return "Vô hạn"
+    if (u.subscriptionExpiresAt && new Date(u.subscriptionExpiresAt).getTime() < Date.now()) return "Free (Hết hạn)"
+    if (u.subscriptionTier === "2-4") return "2-4 người"
+    if (u.subscriptionTier === "5+") return "5+ người"
+    return "Free"
+  }
+
   return (
     <div className="min-w-64 flex-1">
       <div className="flex items-center gap-3">
@@ -294,7 +407,9 @@ function UserSummary({ user, docs }: { user: User; docs: number }) {
             <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">{user.role}</span>
             {user.isLocked && <span className="rounded-full bg-destructive/10 px-1.5 py-0.5 text-xs text-destructive">locked</span>}
           </div>
-          <p className="truncate text-xs text-muted-foreground">{user.email} • {formatBytes(user.storageUsed)} used • {docs} files</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {user.email} • {formatBytes(user.storageUsed)} used • {docs} files • Gói: <span className="font-semibold text-primary">{getPackageLabel(user)}</span>
+          </p>
         </div>
       </div>
     </div>
