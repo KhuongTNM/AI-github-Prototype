@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from "react"
 import {
   Upload, FileText, Download, Trash2, Eye, MoreVertical, Search,
   Filter, Grid3X3, List, ChevronDown, X, CheckCircle2, AlertCircle,
-  Loader2, ArrowUpDown, Edit3,
+  Loader2, ArrowUpDown, Edit3, BookOpen,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -262,7 +262,7 @@ const fileTypeColors: Record<string, string> = {
 }
 
 function DocumentCard({
-  doc, viewMode, onPreview, onEdit, onDelete, onDownload, onChat, categories
+  doc, viewMode, onPreview, onEdit, onDelete, onDownload, onChat, onGenerateFlashcards, categories
 }: {
   doc: Document
   viewMode: "grid" | "list"
@@ -271,6 +271,7 @@ function DocumentCard({
   onDelete: (id: string) => void
   onDownload: (id: string) => void
   onChat: (doc: Document) => void
+  onGenerateFlashcards: (doc: Document) => void
   categories: ReturnType<typeof useApp>["categories"]
 }) {
   const category = categories.find(c => c.id === doc.categoryId)
@@ -295,6 +296,9 @@ function DocumentCard({
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onChat(doc)} title="Chat AI">
             <span className="text-xs">💬</span>
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onGenerateFlashcards(doc)} title="Tạo flashcard từ tài liệu">
+            <BookOpen className="h-3 w-3" />
           </Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDownload(doc.id)} title="Tải xuống">
             <Download className="h-3 w-3" />
@@ -350,6 +354,10 @@ function DocumentCard({
         <Button size="sm" className="flex-1 gap-1 text-xs" onClick={() => onChat(doc)}>
           💬 Chat AI
         </Button>
+        <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => onGenerateFlashcards(doc)}>
+          <BookOpen className="h-3 w-3" />
+          Flashcards
+        </Button>
         <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => onDownload(doc.id)} title="Tải xuống">
           <Download className="h-3 w-3" />
         </Button>
@@ -363,7 +371,7 @@ function DocumentCard({
 
 // ─── Main Document Manager ────────────────────────────────────────────────────
 export function DocumentManager() {
-  const { documents, categories, addDocument, deleteDocument, updateDocument, currentUser, setCurrentPage } = useApp()
+  const { documents, categories, addDocument, deleteDocument, updateDocument, currentUser, setCurrentPage, generateFlashcardsFromDocument } = useApp()
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [sortBy, setSortBy] = useState<"date" | "name" | "size">("date")
@@ -629,6 +637,10 @@ export function DocumentManager() {
               onDelete={deleteDocument}
               onDownload={handleDownload}
               onChat={() => setCurrentPage("chat")}
+              onGenerateFlashcards={(document) => {
+                generateFlashcardsFromDocument(document.id)
+                setCurrentPage("flashcards")
+              }}
               categories={categories}
             />
           ))}

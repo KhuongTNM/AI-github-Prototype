@@ -11,6 +11,7 @@ import { ProfilePage } from "@/components/profile/profile-page"
 import { CloudStorage } from "@/components/cloud/cloud-storage"
 import { AdminDashboard } from "@/components/admin/admin-dashboard"
 import { FeaturesSection, Footer } from "@/components/features-section"
+import { FlashcardPage } from "@/components/flashcards/flashcard-page"
 import { Button } from "@/components/ui/button"
 import { useApp } from "@/lib/store"
 import { cn } from "@/lib/utils"
@@ -81,6 +82,13 @@ function HomePage() {
       desc: text.docsDesc,
       color: "from-blue-500 to-cyan-600",
       page: "documents" as const,
+    },
+    {
+      icon: BookOpen,
+      label: "Flashcards",
+      desc: "Ôn tập nhanh các khái niệm với thẻ học.",
+      color: "from-emerald-500 to-teal-600",
+      page: "flashcards" as const,
     },
     {
       icon: Cloud,
@@ -216,6 +224,8 @@ export default function AIStudyHub() {
         return <div className="flex flex-1 flex-col overflow-hidden"><AdminDashboard /></div>
       case "trash":
         return <div className="flex flex-1 flex-col overflow-hidden"><TrashPage /></div>
+      case "flashcards":
+        return <div className="flex flex-1 flex-col overflow-hidden"><FlashcardPage /></div>
       default:
         return <div className="flex-1 overflow-y-auto"><HomePage /></div>
     }
