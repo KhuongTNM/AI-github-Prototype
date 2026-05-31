@@ -75,7 +75,13 @@ export interface ActivityLog {
   target: string
   timestamp: Date
 }
-
+export interface Flashcard {
+  id: string
+  documentId?: string
+  question: string
+  answer: string
+  createdAt: Date
+}
 export type Language = "vi" | "en"
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
@@ -289,7 +295,7 @@ interface AppState {
   language: Language
   showAuthModal: boolean
   authModalTab: "login" | "register" | "forgot"
-  currentPage: "home" | "documents" | "chat" | "cloud" | "profile" | "admin" | "trash"
+  currentPage: "home" | "documents" | "chat" | "cloud" | "profile" | "admin" | "trash" | "flashcards"
   login: (email: string, password: string) => { success: boolean; error?: string }
   register: (email: string, password: string, displayName: string) => { success: boolean; error?: string }
   logout: () => void
@@ -310,6 +316,11 @@ interface AppState {
   createSubAdminAccount: (email: string, password: string, displayName: string) => { success: boolean; error?: string }
   addCategory: (name: string, color: string) => void
   deleteCategory: (id: string) => void
+  addFlashcards: (cards: Flashcard[]) => void
+  deleteFlashcard: (id: string) => void
+  updateFlashcardStatus: (id: string, status: Flashcard["status"]) => void
+  generateFlashcardsFromDocument: (docId: string) => void
+  setFlashcardSelectedDocumentId: (id: string | "all") => void
   toggleDarkMode: () => void
   setLanguage: (language: Language) => void
 }
@@ -324,6 +335,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(MOCK_ACTIVITY)
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([
+    {
+      id: "flashcard-1",
+      documentId: "doc-1",
+      question: "Nội dung chính của tài liệu Giải tích 1 - Chương 1 là gì?",
+      answer: "Giới hạn, đạo hàm và ứng dụng cơ bản trong bài toán tối ưu.",
+      createdAt: new Date("2026-05-26T08:00:00"),
+      status: "new",
+    },
+    {
+      id: "flashcard-2",
+      documentId: "doc-2",
+      question: "Khái niệm OOP quan trọng nhất trong Java là gì?",
+      answer: "Lập trình hướng đối tượng tập trung vào lớp, đối tượng, kế thừa và đa hình.",
+      createdAt: new Date("2026-05-26T08:05:00"),
+      status: "learning",
+    },
+    {
+      id: "flashcard-3",
+      question: "Tại sao cần tạo flashcard khi học tài liệu?",
+      answer: "Flashcard giúp ôn tập nhanh, ghi nhớ điểm chính và củng cố kiến thức qua lặp lại.",
+      createdAt: new Date("2026-05-26T08:10:00"),
+      status: "mastered",
+    },
+  ])
+  const [flashcardSelectedDocumentId, setFlashcardSelectedDocId] = useState<string | "all">("all")
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [language, setLanguage] = useState<Language>("vi")
   const [showAuthModal, setShowAuthModal] = useState(false)
@@ -398,6 +435,61 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addChatSession = useCallback((session: ChatSession) => {
     setChatSessions(prev => [session, ...prev])
   }, [])
+
+  const addFlashcards = useCallback((cards: Flashcard[]) => {
+    setFlashcards(prev => [...cards, ...prev])
+  }, [])
+
+  const deleteFlashcard = useCallback((id: string) => {
+    setFlashcards(prev => prev.filter(card => card.id !== id))
+  }, [])
+
+  const updateFlashcardStatus = useCallback((id: string, status: Flashcard["status"]) => {
+    setFlashcards(prev => prev.map(card => card.id === id ? { ...card, status } : card))
+  }, [])
+
+  const setFlashcardSelectedDocumentId = useCallback((id: string | "all") => {
+    setFlashcardSelectedDocId(id)
+  }, [])
+
+  const generateFlashcardsFromDocument = useCallback((docId: string) => {
+    const doc = documents.find(d => d.id === docId)
+    if (!doc) return
+
+    const now = Date.now()
+    const topic = doc.subject || doc.name || "chủ đề"
+    const tags = doc.tags.length > 0 ? doc.tags.join(", ") : null
+    const generated: Flashcard[] = [
+      {
+        id: `flashcard-${now}-1`,
+        documentId: doc.id,
+        question: `Nội dung chính của tài liệu "${doc.name}" là gì?`,
+        answer: doc.description
+          ? `${doc.description}`
+          : `Tài liệu này tập trung vào ${topic}.`,
+        createdAt: new Date(),
+      },
+      {
+        id: `flashcard-${now}-2`,
+        documentId: doc.id,
+        question: `Những khái niệm quan trọng cần nhớ trong tài liệu này là gì?`,
+        answer: tags
+          ? `Các khái niệm chính bao gồm: ${tags}.`
+          : `Các khái niệm chính xoay quanh ${topic}.`,
+        createdAt: new Date(),
+      },
+      {
+        id: `flashcard-${now}-3`,
+        documentId: doc.id,
+        question: `Làm thế nào để áp dụng kiến thức này trong bài tập hoặc ôn tập?`,
+        answer: `Sử dụng ý chính từ tài liệu để trả lời ví dụ, tóm tắt nội dung và lặp lại thường xuyên.`,
+        createdAt: new Date(),
+      },
+    ]
+
+    setFlashcards(prev => [...generated, ...prev])
+    setFlashcardSelectedDocId(doc.id)
+  }, [documents])
 
   const updateChatSession = useCallback((id: string, updates: Partial<ChatSession>) => {
     setChatSessions(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s))
@@ -499,11 +591,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider value={{
       currentUser, users, documents, categories, chatSessions, activeChatId,
-      activityLogs, isDarkMode, language, showAuthModal, authModalTab, currentPage,
+      activityLogs, flashcards, flashcardSelectedDocumentId, isDarkMode, language, showAuthModal, authModalTab, currentPage,
       login, register, logout, openAuthModal, closeAuthModal, setCurrentPage,
       addDocument, updateDocument, deleteDocument, restoreDocument,
       addChatSession, updateChatSession, setActiveChatId,
       updateUser, toggleUserLock, resetUserPassword, deleteUserAccount, createSubAdminAccount, addCategory, deleteCategory,
+      addFlashcards, generateFlashcardsFromDocument, setFlashcardSelectedDocumentId,
       toggleDarkMode, setLanguage,
     }}>
       {children}

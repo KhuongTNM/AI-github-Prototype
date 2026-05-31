@@ -1,6 +1,6 @@
 "use client"
 
-import { Upload, Cloud, Bot, Shield, FileText } from "lucide-react"
+import { Upload, Cloud, Bot, Shield, FileText, BookOpen } from "lucide-react"
 
 const features = [
   {
@@ -12,6 +12,11 @@ const features = [
     icon: Cloud,
     title: "Lưu trữ Cloud",
     description: "Truy cập tài liệu mọi lúc, mọi nơi. Không lo đầy ổ cứng cá nhân.",
+  },
+  {
+    icon: BookOpen,
+    title: "Flashcards học tập",
+    description: "Tạo thẻ học nhanh từ nội dung và ôn luyện kiến thức mỗi ngày.",
   },
   {
     icon: Bot,
@@ -33,7 +38,7 @@ export function FeaturesSection() {
           Mọi thứ bạn cần để học hiệu quả
         </h2>
         <p className="text-muted-foreground">
-          Bốn chức năng cốt lõi của AI Study Hub
+          Các chức năng cốt lõi của AI Study Hub
         </p>
       </div>
 
